@@ -80,6 +80,118 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
   </tr>
 </table>
 
+## 🚀 Projetos em destaque
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3><a href="https://github.com/Helio965/Nexo-Faturamento-Inteligente">📈 NEXO — Faturamento Inteligente</a></h3>
+      <p>Plataforma de dados e Business Intelligence para o varejo de micro e pequenas empresas. Processa os relatórios do PDV com um motor de ETL, gera indicadores e dashboards e oferece área multiempresa com atualizações em tempo real.</p>
+      <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+      <img src="https://img.shields.io/badge/Flask-000000?style=flat-square&logo=flask&logoColor=white" alt="Flask" />
+      <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+    </td>
+    <td width="50%" valign="top">
+      <h3><a href="https://github.com/Helio965/helpdesk-lite-flask">🎫 HelpDesk Lite</a></h3>
+      <p>Sistema acadêmico de helpdesk para controle de usuários, chamados e atualizações. Usa ORM com migrations, autenticação por sessão, validação no servidor e testes automatizados.</p>
+      <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+      <img src="https://img.shields.io/badge/Flask-000000?style=flat-square&logo=flask&logoColor=white" alt="Flask" />
+      <img src="https://img.shields.io/badge/MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white" alt="MySQL" />
+      <img src="https://img.shields.io/badge/pytest-0A9EDC?style=flat-square&logo=pytest&logoColor=white" alt="pytest" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3><a href="https://github.com/Helio965/Connectagro">🌱 ConnectAgro</a></h3>
+      <p>Plataforma web de gestão agrícola: culturas, glebas, insumos, finanças, equipe e colheita, com mapa das áreas, relatórios exportáveis em CSV/PDF e controle de acesso por perfil.</p>
+      <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+      <img src="https://img.shields.io/badge/Flask-000000?style=flat-square&logo=flask&logoColor=white" alt="Flask" />
+      <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+    </td>
+    <td width="50%" valign="top">
+      <h3><a href="https://github.com/Helio965/Projeto_Integrador_1">🧩 Projeto Integrador I</a></h3>
+      <p>Entrega acadêmica do NEXO em ADS: Design Thinking, requisitos, backlog, protótipo navegável e apresentação. Atuei como Product Owner e na organização da documentação e do GitHub.</p>
+      <img src="https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white" alt="HTML5" />
+      <img src="https://img.shields.io/badge/CSS-1572B6?style=flat-square&logo=css&logoColor=white" alt="CSS" />
+      <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3><a href="https://github.com/Helio965/Nexus_-map">🗺️ Nexus Map</a></h3>
+      <p>Planejador multimodal de rotas (carro, a pé, metrô e avião) com dados geográficos reais, comparação lado a lado e aviso explícito quando não há dados disponíveis.</p>
+      <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+      <img src="https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React" />
+      <img src="https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js" />
+    </td>
+    <td width="50%" valign="top">
+      <h3><a href="https://github.com/Helio965/language-tool">🗣️ English AI</a></h3>
+      <p>Plataforma acadêmica de aprendizado de inglês com IA: aulas curtas, conversação e correções que explicam o porquê, com apoio em português. MVP em desenvolvimento.</p>
+      <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+      <img src="https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React" />
+      <img src="https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white" alt="Express" />
+    </td>
+  </tr>
+</table>
+
+<details>
+  <summary><b>Mais projetos</b></summary>
+  <br />
+
+| Projeto | Descrição | Tecnologia principal |
+| --- | --- | --- |
+| [Sorting-Algorithm-Lab](https://github.com/Helio965/Sorting-Algorithm-Lab) | Laboratório visual e interativo para aprender algoritmos de ordenação passo a passo | TypeScript · React |
+| [Pac-Man](https://github.com/Helio965/Pac-Man) | Agente Pac-Man com o algoritmo Minimax (disciplina de Inteligência Artificial) | Python |
+| [BioKernel-Heart](https://github.com/Helio965/BioKernel-Heart) | Coração humano 3D anatômico e interativo no navegador | JavaScript · Three.js |
+| [Galaxia_de_Andromeda](https://github.com/Helio965/Galaxia_de_Andromeda) | Explorador 3D interativo de galáxias reais, gerado em tempo real | JavaScript · Three.js |
+| [Solar-System-Explorer](https://github.com/Helio965/Solar-System-Explorer) | Experiência visual e interativa para explorar os planetas do Sistema Solar | CSS 3D · JavaScript |
+| [Modern-Web-Clock](https://github.com/Helio965/Modern-Web-Clock) | Relógio e calendário circular com o horário de qualquer localização do mundo | JavaScript |
+
+</details>
+
+## 📊 Estatísticas
+
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/stats-dark.svg" />
+    <img height="165" src="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/stats.svg" alt="Estatísticas do GitHub de Helio965: commits, pull requests, issues e estrelas" />
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://streak-stats.demolab.com?user=Helio965&locale=pt_BR&hide_border=true&theme=github-dark-blue" />
+    <img height="165" src="https://streak-stats.demolab.com?user=Helio965&locale=pt_BR&hide_border=true" alt="Sequência de contribuições de Helio965" />
+  </picture>
+</div>
+
+## 💻 Linguagens mais utilizadas
+
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/top-langs-dark.svg" />
+    <img height="165" src="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/top-langs.svg" alt="Linguagens mais utilizadas nos repositórios de Helio965" />
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/summary/github_dark/2-most-commit-language.svg" />
+    <img height="165" src="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/summary/github/2-most-commit-language.svg" alt="Linguagens com mais commits de Helio965" />
+  </picture>
+</div>
+
+## 📈 Atividade
+
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/summary/github_dark/0-profile-details.svg" />
+    <img src="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/summary/github/0-profile-details.svg" alt="Linha do tempo de contribuições de Helio965" />
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/summary/github_dark/4-productive-time.svg" />
+    <img height="165" src="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/summary/github/4-productive-time.svg" alt="Horários de commit de Helio965 (UTC-3)" />
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/summary/github_dark/1-repos-per-language.svg" />
+    <img height="165" src="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/summary/github/1-repos-per-language.svg" alt="Repositórios por linguagem de Helio965" />
+  </picture>
+</div>
+
 ## 📫 Contato
 
 <div align="center">

@@ -1,0 +1,79 @@
+name: generate profile stats
+
+on:
+  schedule:
+    - cron: "37 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # GitHub Readme Stats cards, rendered here instead of relying on the
+      # rate-limited public instance. The username defaults to the repo owner.
+      - name: generate stats card (light)
+        uses: stats-organization/github-readme-stats-action@v2
+        with:
+          card: stats
+          options: username=${{ github.repository_owner }}&show_icons=true&include_all_commits=true&hide_border=true&locale=pt-br&custom_title=Estat%C3%ADsticas%20do%20GitHub
+          path: dist/stats.svg
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_error: "true"
+
+      - name: generate stats card (dark)
+        uses: stats-organization/github-readme-stats-action@v2
+        with:
+          card: stats
+          options: username=${{ github.repository_owner }}&show_icons=true&include_all_commits=true&hide_border=true&locale=pt-br&custom_title=Estat%C3%ADsticas%20do%20GitHub&theme=github_dark
+          path: dist/stats-dark.svg
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_error: "true"
+
+      - name: generate top languages card (light)
+        uses: stats-organization/github-readme-stats-action@v2
+        with:
+          card: top-langs
+          options: username=${{ github.repository_owner }}&layout=compact&langs_count=6&hide=mako,batchfile&hide_border=true&locale=pt-br
+          path: dist/top-langs.svg
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_error: "true"
+
+      - name: generate top languages card (dark)
+        uses: stats-organization/github-readme-stats-action@v2
+        with:
+          card: top-langs
+          options: username=${{ github.repository_owner }}&layout=compact&langs_count=6&hide=mako,batchfile&hide_border=true&locale=pt-br&theme=github_dark
+          path: dist/top-langs-dark.svg
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_error: "true"
+
+      # Profile summary cards (contribution timeline, commits per language,
+      # productive hours). AUTO_PUSH is off so nothing is committed to main.
+      - name: generate profile summary cards
+        uses: vn7n24fzkq/github-profile-summary-cards@v0.12.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          USERNAME: ${{ github.repository_owner }}
+          UTC_OFFSET: -3
+          AUTO_PUSH: false
+
+      - name: keep only the light and dark summary themes
+        run: |
+          mkdir -p dist/summary
+          cp -r profile-summary-card-output/github profile-summary-card-output/github_dark dist/summary/
+
+      - name: push cards to the output-stats branch
+        uses: crazy-max/ghaction-github-pages@v5
+        with:
+          target_branch: output-stats
+          build_dir: dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
