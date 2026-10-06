@@ -192,6 +192,18 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
   </picture>
 </div>
 
+## 🐍 Contribuições
+
+<p align="center"><sub>Visualizações geradas automaticamente todos os dias por GitHub Actions a partir do meu gráfico de contribuições.</sub></p>
+
+### Snake
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output/github-snake-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output/github-snake.svg" />
+  <img alt="Snake percorrendo o gráfico de contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output/github-snake.svg" />
+</picture>
+
 ## 📫 Contato
 
 <div align="center">
