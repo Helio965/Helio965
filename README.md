@@ -204,6 +204,14 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
   <img alt="Snake percorrendo o gráfico de contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output/github-snake.svg" />
 </picture>
 
+### Contribuições em 3D
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-3d/profile-night-rainbow.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-3d/profile-south-season-animate.svg" />
+  <img alt="Gráfico 3D das contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-3d/profile-south-season-animate.svg" />
+</picture>
+
 ## 📫 Contato
 
 <div align="center">

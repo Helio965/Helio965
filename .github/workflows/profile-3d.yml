@@ -1,0 +1,32 @@
+name: generate 3d contributions
+
+on:
+  schedule:
+    - cron: "27 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Writes the SVGs to ./profile-3d-contrib, so no checkout is needed.
+      - name: generate 3d svgs
+        uses: yoshi389111/github-profile-3d-contrib@v0.9.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USERNAME: ${{ github.repository_owner }}
+
+      - name: push 3d svgs to the output-3d branch
+        uses: crazy-max/ghaction-github-pages@v5
+        with:
+          target_branch: output-3d
+          build_dir: profile-3d-contrib
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
