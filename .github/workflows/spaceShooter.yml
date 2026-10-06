@@ -1,0 +1,40 @@
+name: generate space shooter
+
+on:
+  schedule:
+    - cron: "27 4 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: install gh-space-shooter
+        run: pip install gh-space-shooter==2.0.5
+
+      - name: generate space shooter gif
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_USER: ${{ github.repository_owner }}
+        run: |
+          mkdir -p dist
+          gh-space-shooter "$GITHUB_USER" --output dist/space-shooter.gif --strategy random --fps 25
+
+      - name: push gif to the output-space-shooter branch
+        uses: crazy-max/ghaction-github-pages@v5
+        with:
+          target_branch: output-space-shooter
+          build_dir: dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

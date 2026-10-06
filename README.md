@@ -212,6 +212,118 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
   <img alt="Gráfico 3D das contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-3d/profile-south-season-animate.svg" />
 </picture>
 
+## 🎮 Arcade de contribuições
+
+<p align="center"><sub>Meu gráfico de contribuições transformado em jogos e simulações. Clique para abrir cada um.</sub></p>
+
+### Pac-Man
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/pacman-contribution-graph-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/pacman-contribution-graph.svg" />
+  <img alt="Pac-Man comendo o gráfico de contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/pacman-contribution-graph.svg" />
+</picture>
+
+<details>
+  <summary><b>👾 Commit Invaders</b></summary>
+  <br />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-invaders/commit-invaders-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-invaders/commit-invaders.svg" />
+    <img alt="Space Invaders com as contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-invaders/commit-invaders.svg" />
+  </picture>
+</details>
+
+<details>
+  <summary><b>🚀 Space Shooter</b></summary>
+  <br />
+  <img alt="Nave atacando o gráfico de contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-space-shooter/space-shooter.gif" />
+</details>
+
+<details>
+  <summary><b>🧱 Breakout</b></summary>
+  <br />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-breakout/dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-breakout/light.svg" />
+    <img alt="Breakout com as contribuições de Helio965 como tijolos" src="https://raw.githubusercontent.com/Helio965/Helio965/output-breakout/light.svg" />
+  </picture>
+</details>
+
+<details>
+  <summary><b>🟦 Tetris</b></summary>
+  <br />
+  <img alt="Peças de Tetris caindo sobre o gráfico de contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-tetris/tetris.svg" />
+</details>
+
+<details>
+  <summary><b>🕹️ Mais jogos: Galaga, Breakout clássico, Puzzle Bobble, Bomberman e Minesweeper</b></summary>
+  <br />
+  <p><b>Galaga</b></p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/galaga-contribution-graph-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/galaga-contribution-graph.svg" />
+    <img alt="Galaga com as contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/galaga-contribution-graph.svg" />
+  </picture>
+  <p><b>Breakout clássico</b></p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/breakout-contribution-graph-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/breakout-contribution-graph.svg" />
+    <img alt="Breakout clássico com as contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/breakout-contribution-graph.svg" />
+  </picture>
+  <p><b>Puzzle Bobble</b></p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/puzzle-bobble-contribution-graph-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/puzzle-bobble-contribution-graph.svg" />
+    <img alt="Puzzle Bobble com as contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/puzzle-bobble-contribution-graph.svg" />
+  </picture>
+  <p><b>Bomberman</b></p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/bomberman-contribution-graph-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/bomberman-contribution-graph.svg" />
+    <img alt="Bomberman com as contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/bomberman-contribution-graph.svg" />
+  </picture>
+  <p><b>Minesweeper</b></p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/minesweeper-contribution-graph-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/minesweeper-contribution-graph.svg" />
+    <img alt="Minesweeper com as contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-arcade/minesweeper-contribution-graph.svg" />
+  </picture>
+</details>
+
+<details>
+  <summary><b>🧬 Game of Life</b></summary>
+  <br />
+  <p><b>Jogo da Vida de Conway semeado pelas contribuições</b></p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-life/contribution-life-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-life/contribution-life.svg" />
+    <img alt="Jogo da Vida de Conway a partir das contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-life/contribution-life.svg" />
+  </picture>
+  <p><b>Tabuleiro do Jogo da Vida</b></p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-gol/life-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-gol/life-light.svg" />
+    <img alt="Tabuleiro do Jogo da Vida semeado pelas contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-gol/life-light.svg" />
+  </picture>
+</details>
+
+<details>
+  <summary><b>🌆 GitWorld</b></summary>
+  <br />
+  <img alt="Cidade animada construída a partir das contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-gitworld/gitworld.svg" />
+</details>
+
+<details>
+  <summary><b>🏡 Vila Maeul in the Sky</b></summary>
+  <br />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-maeul/maeul-in-the-sky-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-maeul/maeul-in-the-sky-light.svg" />
+    <img alt="Vila isométrica construída a partir das contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-maeul/maeul-in-the-sky-dark.svg" />
+  </picture>
+</details>
+
 ## 📫 Contato
 
 <div align="center">

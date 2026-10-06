@@ -1,0 +1,95 @@
+name: generate arcade games
+
+on:
+  schedule:
+    - cron: "47 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Each game runs in its own step so one failure doesn't block the others.
+      # The deploy replaces the whole branch, so start from the last published
+      # SVGs: a game that fails today keeps yesterday's image in the README.
+      - name: restore the last published svgs
+        env:
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          mkdir -p dist
+          if git ls-remote --exit-code --heads "$REPO_URL" output-arcade > /dev/null; then
+            git clone --quiet --depth 1 --branch output-arcade "$REPO_URL" previous
+            find previous -maxdepth 1 -name '*.svg' -exec cp {} dist/ \;
+          fi
+
+      - name: generate pacman
+        uses: abozanona/pacman-contribution-graph@v5.3.2
+        continue-on-error: true
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          games: "pacman"
+
+      - name: generate breakout
+        uses: abozanona/pacman-contribution-graph@v5.3.2
+        continue-on-error: true
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          games: "breakout"
+
+      - name: generate galaga
+        uses: abozanona/pacman-contribution-graph@v5.3.2
+        continue-on-error: true
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          games: "galaga"
+
+      - name: generate puzzle bobble
+        uses: abozanona/pacman-contribution-graph@v5.3.2
+        continue-on-error: true
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          games: "puzzle-bobble"
+
+      - name: generate bomberman
+        uses: abozanona/pacman-contribution-graph@v5.3.2
+        continue-on-error: true
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          games: "bomberman"
+
+      - name: generate minesweeper
+        uses: abozanona/pacman-contribution-graph@v5.3.2
+        continue-on-error: true
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          games: "minesweeper"
+
+      - name: push arcade svgs to the output-arcade branch
+        uses: crazy-max/ghaction-github-pages@v5
+        with:
+          target_branch: output-arcade
+          build_dir: dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Runs after the deploy so the games that worked are still published,
+      # but the run turns red if any image the README uses is missing.
+      - name: check that every game has light and dark svgs
+        run: |
+          missing=0
+          for game in pacman breakout galaga puzzle-bobble bomberman minesweeper; do
+            for file in "dist/$game-contribution-graph.svg" "dist/$game-contribution-graph-dark.svg"; do
+              if [ ! -s "$file" ]; then
+                echo "::error::$file was not generated"
+                missing=1
+              fi
+            done
+          done
+          exit "$missing"

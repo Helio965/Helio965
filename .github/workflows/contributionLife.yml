@@ -1,0 +1,32 @@
+name: generate contribution life
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: generate game of life svgs
+        uses: satomasahiro2005/contribution-life@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          login: ${{ github.repository_owner }}
+          out_dir: dist
+
+      - name: push svgs to the output-life branch
+        uses: crazy-max/ghaction-github-pages@v5
+        with:
+          target_branch: output-life
+          build_dir: dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

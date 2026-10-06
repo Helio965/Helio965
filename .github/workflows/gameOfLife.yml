@@ -1,0 +1,47 @@
+name: generate game of life board
+
+on:
+  schedule:
+    - cron: "27 5 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # The generator exits non-zero when a file goes over its size budget,
+      # but it still writes the file, so the next step decides what to publish.
+      - name: generate game of life board svgs
+        uses: HibikiHata/game-of-life-svg@v1
+        continue-on-error: true
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          outputs: dist
+
+      # When the board barely moves, only life-<mode>-static.svg is written.
+      # Publish the static board under the animated name so the README image
+      # never 404s; fail if neither file exists.
+      - name: make sure life-light.svg and life-dark.svg exist
+        run: |
+          for mode in light dark; do
+            if [ ! -s "dist/life-$mode.svg" ] && [ -s "dist/life-$mode-static.svg" ]; then
+              echo "::notice::animation for $mode barely moves, publishing the static board"
+              cp "dist/life-$mode-static.svg" "dist/life-$mode.svg"
+            fi
+            test -s "dist/life-$mode.svg"
+          done
+
+      - name: push svgs to the output-gol branch
+        uses: crazy-max/ghaction-github-pages@v5
+        with:
+          target_branch: output-gol
+          build_dir: dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

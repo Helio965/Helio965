@@ -1,0 +1,28 @@
+name: generate commit invaders
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # The action commits and pushes to output_branch itself, so it needs a
+      # checked-out repository with the job token's credentials.
+      - uses: actions/checkout@v6
+
+      - name: generate commit invaders svgs
+        uses: Goblinlordx/commit-invaders@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_user_name: ${{ github.repository_owner }}
+          output_branch: output-invaders
