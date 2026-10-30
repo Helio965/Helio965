@@ -17,7 +17,7 @@ publicado na branch `output-stats`. Ele contém:
 | `daily` | Commits por dia |
 | `languages` | Commits por dia, agrupados pela linguagem principal do repositório |
 | `repositories` | Repositórios analisados (públicos, privados, arquivados, vazios, forks ignorados) |
-| `coverage.private` | `complete` com `PROFILE_STATS_TOKEN`; `not_configured` sem ele |
+| `coverage.private` | `not_configured` sem `PROFILE_STATS_TOKEN`; `token` com ele (todos os privados que o token lê); `complete` quando o GitHub informa quantos privados a conta tem e todos foram lidos |
 | `excluded` | Merges, commits de automação, cópias de rebase e branches de imagens ignorados |
 | `generated_at`, `today` | Momento da coleta e o dia correspondente em Brasília |
 
@@ -25,7 +25,7 @@ Regras de contagem (`scripts/lib/activity.js`):
 
 - Entram commits de qualquer autor: a conta Helio965, Claude, Codex, colaboradores e outras ferramentas. A autoria registrada no Git não é alterada.
 - Todas as branches são lidas, não só a `main`. Cada SHA conta uma vez, mesmo que apareça em várias branches ou repositórios.
-- Commits de merge não contam, porque repetem trabalho já contado. Cópias de rebase ou cherry-pick (mesmo autor, data de autoria e título) contam uma vez por repositório.
+- Commits de merge não contam, porque repetem trabalho já contado. Cópias de rebase ou cherry-pick (mesmo autor, data de autoria e título) contam uma vez, em qualquer repositório, para que o resultado não dependa da ordem de leitura.
 - Ficam de fora os forks, as branches `output*` deste repositório (imagens geradas) e os commits do `github-actions[bot]`.
 - O dia de cada commit é a data de autoria (quando o trabalho foi feito) no fuso `America/Sao_Paulo`. Commits com data no futuro usam a data do commit ou são descartados.
 - A sequência atual continua viva enquanto ontem teve commits, mesmo que hoje ainda não tenha. Em caso de empate, a maior sequência é a mais antiga, como no Streak Stats.
@@ -68,18 +68,26 @@ Para incluir os privados:
 
 1. Em <https://github.com/settings/personal-access-tokens/new>, crie um **fine-grained token**:
    - Resource owner: `Helio965`;
-   - Repository access: **All repositories** (ou selecione todos os seus repositórios);
+   - Repository access: **All repositories**, que inclui também os repositórios criados depois (com “Only select repositories”, um repositório novo ou esquecido ficaria de fora sem nenhum erro);
    - Permissions › Repository: **Contents: Read-only** (o GitHub adiciona **Metadata: Read-only** automaticamente);
    - escolha uma validade e anote quando renovar.
 2. Em <https://github.com/Helio965/Helio965/settings/secrets/actions>, crie o secret **`PROFILE_STATS_TOKEN`** com o token.
 3. Rode o workflow `generate profile stats` manualmente (aba Actions › Run workflow).
 
-O token só lê commits e branches. Os logs e o `activity.json` publicam apenas totais: nomes de repositórios privados nunca aparecem. Se o token for recusado (expirado ou sem permissão), a coleta falha e os cartões publicados continuam os do último dia válido.
+O token só lê commits e branches. Os logs e o `activity.json` publicam apenas totais: nomes de repositórios privados nunca aparecem. O resumo de cada execução informa quantos repositórios privados foram lidos.
+
+Um token não revela os repositórios privados aos quais não tem acesso, então a coleta se protege assim:
+
+- se o token for recusado (expirado ou revogado), a coleta falha e os cartões publicados continuam os do último dia válido;
+- se o GitHub informar quantos repositórios privados a conta tem e o token ler menos que isso, a coleta falha;
+- se o número de privados lidos cair em relação à última publicação, a coleta é recusada (ver abaixo);
+- se o token não ler nenhum repositório privado, a execução mostra um aviso.
 
 ## Proteções contra dados parciais
 
-- Qualquer erro de API (autenticação, limite de requisições, timeout, resposta incompleta) interrompe a coleta; nada é publicado com total parcial.
-- Se o total de commits cair mais de 10% com a mesma cobertura, a coleta é recusada. Depois de apagar um repositório de propósito, rode o workflow manualmente com **allow_decrease** marcado.
+- Qualquer erro de API (autenticação, limite de requisições, timeout, corpo de resposta cortado, lista interrompida no meio da paginação) interrompe a coleta; nada é publicado com total parcial.
+- Se o total de commits cair mais de 10%, ou se o número de repositórios privados lidos diminuir, com o mesmo tipo de cobertura, a coleta é recusada. Depois de apagar um repositório de propósito, rode o workflow manualmente com **allow_decrease** marcado.
+- Se a branch `output-stats` não puder ser lida, o workflow para antes de coletar, porque a comparação com a última publicação depende dela.
 - Os SVGs são conferidos antes da publicação: estrutura válida, sem cartão de erro, sem textos internos e com o mesmo total do `activity.json`.
 
 ## Testes
@@ -89,4 +97,4 @@ npm ci
 npm test
 ```
 
-Os testes cobrem datas e fuso, sequências de 2, 7, 15 e 30 dias (inclusive na virada de mês e de ano), deduplicação, merges, autores, erros e limites da API, os cartões (comparados byte a byte com os originais), o endpoint do 3D, o snapshot do Maeul e as verificações de publicação. `test/fixtures/real-history-2026-10-30.json` guarda a série diária real conferida com `git log` de clones completos.
+Os testes cobrem datas e fuso, sequências de 2, 7, 15 e 30 dias (inclusive na virada de mês e de ano), deduplicação, merges, autores, erros e limites da API, a cobertura dos privados, os cartões (comparados byte a byte com os originais), o endpoint do 3D, o snapshot do Maeul e as verificações de publicação. `test/fixtures/real-history-2026-10-30.json` guarda a série diária real dos repositórios públicos, conferida com `git log` de clones completos.

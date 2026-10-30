@@ -35,10 +35,10 @@ test('pagination follows rel="next" on the original path until the last page', a
     () => response(200, [4])
   );
   const { api } = client(fetchImpl);
-  const { items } = await api.paginate('/repos/Helio965/Kernel/commits', { sha: 'abc' });
+  const { items } = await api.paginate('/repos/Helio965/Private-Project/commits', { sha: 'abc' });
   assert.deepEqual(items, [1, 2, 3, 4]);
   assert.equal(calls.length, 3);
-  for (const call of calls) assert.match(call.url, /^https:\/\/api\.github\.com\/repos\/Helio965\/Kernel\/commits\?/);
+  for (const call of calls) assert.match(call.url, /^https:\/\/api\.github\.com\/repos\/Helio965\/Private-Project\/commits\?/);
   assert.match(calls[2].url, /page=3/);
   assert.equal(calls[0].headers.Authorization, 'Bearer test-token');
   assert.equal(api.requestCount, 3);
@@ -60,8 +60,8 @@ test('timeouts that keep failing end in a clear network error', async () => {
   const timeout = Object.assign(new Error('The operation was aborted due to timeout'), { name: 'TimeoutError' });
   const { fetchImpl } = fakeFetch(...Array(4).fill(timeout));
   const { api } = client(fetchImpl);
-  await assert.rejects(api.request('/repos/Helio965/Kernel/branches'), error =>
-    error.kind === 'network' && /timed out/.test(error.message) && !/Kernel/.test(error.message));
+  await assert.rejects(api.request('/repos/Helio965/Private-Project/branches'), error =>
+    error.kind === 'network' && /timed out/.test(error.message) && !/Private-Project/.test(error.message));
 });
 
 test('a rejected token fails at once without retries', async () => {
@@ -135,10 +135,34 @@ test('the token is never sent outside api.github.com and is required', async () 
 });
 
 test('endpoints are described without repository names', () => {
-  assert.equal(describeEndpoint('/repos/Helio965/Nexo---Faturamento-Inteligente---Render/commits?sha=x'), '/repos/:owner/:repo/commits');
-  assert.equal(describeEndpoint('https://api.github.com/repositories/1424939233/commits?page=2'), '/repositories/:id/commits');
+  assert.equal(describeEndpoint('/repos/Helio965/Secret-Project/commits?sha=x'), '/repos/:owner/:repo/commits');
+  assert.equal(describeEndpoint('https://api.github.com/repositories/123456/commits?page=2'), '/repositories/:id/commits');
   assert.equal(describeEndpoint('/users/Helio965/repos'), '/users/:user/repos');
   assert.equal(nextPageUrl('<https://api.github.com/a?page=2>; rel="next", <https://api.github.com/a?page=9>; rel="last"'), 'https://api.github.com/a?page=2');
   assert.equal(nextPageUrl('<https://api.github.com/a?page=1>; rel="prev"'), null);
   assert.equal(nextPageUrl(null), null);
+});
+
+test('a body cut short is retried like any network failure', async () => {
+  const broken = () => new Response(new ReadableStream({ start(controller) { controller.error(new TypeError('terminated')); } }), { status: 200 });
+  const { fetchImpl, calls } = fakeFetch(broken, () => response(200, [{ sha: 'a' }]));
+  const { api, sleeps } = client(fetchImpl);
+  const { data } = await api.request('/repos/a/b/commits');
+  assert.deepEqual(data, [{ sha: 'a' }]);
+  assert.equal(calls.length, 2);
+  assert.deepEqual(sleeps, [1000]);
+
+  const always = fakeFetch(...Array(4).fill(broken));
+  await assert.rejects(client(always.fetchImpl).api.request('/repos/a/b/commits'), error => error.kind === 'network');
+  const notJson = fakeFetch(() => new Response('<html>', { status: 200 }));
+  await assert.rejects(client(notJson.fetchImpl).api.request('/repos/a/b/commits'), error => error.kind === 'malformed');
+});
+
+test('an allowed status after the first page means a truncated list and is refused', async () => {
+  const { fetchImpl } = fakeFetch(
+    () => response(200, [1, 2], { link: '<https://api.github.com/repos/a/b/commits?page=2>; rel="next"' }),
+    () => response(409, { message: 'Git Repository is empty.' })
+  );
+  await assert.rejects(client(fetchImpl).api.paginate('/repos/a/b/commits', {}, { allow: [409] }), error =>
+    error.kind === 'incomplete' && /after 2 items/.test(error.message));
 });

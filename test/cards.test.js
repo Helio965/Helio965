@@ -118,6 +118,16 @@ test('SVG checks catch broken or unsuitable images', () => {
   assert.ok(checkSvg('<html></html>').some(problem => problem.includes('not an SVG')));
 });
 
+test('a token that stops reading some private repositories is refused', () => {
+  const previous = { ...activity(), coverage: { public: 'complete', private: 'token' }, repositories: { analyzed: 26, private: 2 } };
+  const current = { ...activity({ total: 770 }), coverage: { public: 'complete', private: 'token' }, repositories: { analyzed: 25, private: 1 } };
+  assert.ok(checkConsistency(current, previous).some(problem => problem.includes('private repositories read fell from 2 to 1')));
+  assert.deepEqual(checkConsistency(current, previous, { allowDrop: true }), []);
+  // 'token' and 'complete' both read private repositories, so they are compared.
+  const verified = { ...current, coverage: { public: 'complete', private: 'complete' } };
+  assert.equal(checkConsistency(verified, previous).length, 1);
+});
+
 test('a sharp drop with unchanged coverage is refused as partial data', () => {
   const previous = activity({ total: 775 });
   assert.deepEqual(checkConsistency(activity({ total: 770 }), previous), []);

@@ -64,12 +64,18 @@ test('3D images must show the activity total, the label and the window', t => {
   const settings = JSON.parse(fs.readFileSync(new URL('../.github/profile-3d/settings.json', import.meta.url), 'utf8'));
   assert.equal(settings.length, 10);
   assert.ok(settings.every(entry => entry.l10n.contrib === 'commits'));
-  const good = '<svg xmlns="http://www.w3.org/2000/svg"><text>75</text><text>commits</text><text>2025-10-26 / 2026-10-30</text></svg>';
+  const svg = (total, label = 'commits') => '<svg xmlns="http://www.w3.org/2000/svg"><text class="fill-weak">1</text><text class="fill-weak">10</text>' +
+    '<text style="font-size: 32px;" class="fill-strong">' + total + '</text><text class="fill-fg">' + label + '</text><text>2025-10-26 / 2026-10-30</text></svg>';
+  const good = svg(75);
   for (const { fileName } of settings) fs.writeFileSync(path.join(dir, fileName), good);
   // Only 2026-10-30 (75 commits) is inside the 3D window of 2026-10-30.
   assert.deepEqual(check3dImages(dir, ACTIVITY), []);
-  fs.writeFileSync(path.join(dir, 'profile-night-rainbow.svg'), good.replace('commits', 'contributions'));
+  fs.writeFileSync(path.join(dir, 'profile-night-rainbow.svg'), svg(75, 'contributions'));
   fs.rmSync(path.join(dir, 'profile-gitblock.svg'));
   const problems = check3dImages(dir, ACTIVITY);
   assert.deepEqual(problems, ['profile-night-rainbow.svg: does not show "75 commits"', 'profile-gitblock.svg: missing']);
+  // A radar scale label equal to the expected total must not pass for it.
+  fs.writeFileSync(path.join(dir, 'profile-night-rainbow.svg'), svg(489));
+  const ten = { ...ACTIVITY, daily: { '2026-10-30': 10 } };
+  assert.ok(check3dImages(dir, ten).includes('profile-night-rainbow.svg: does not show "10 commits"'));
 });

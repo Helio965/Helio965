@@ -22,10 +22,13 @@ export function check3dImages(dir, activity) {
     }
     const svg = fs.readFileSync(file, 'utf8');
     problems.push(...checkSvg(svg).map(problem => fileName + ': ' + problem));
-    const texts = Array.from(svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g), match => match[1].trim());
-    if (!texts.includes(expectedTotal) || !texts.includes('commits')) {
+    // The big total is the bold "fill-strong" text right before its label;
+    // other texts (radar scale "1", "10", "100"...) must not satisfy the check.
+    const total = svg.match(/<text[^>]*class="fill-strong"[^>]*>([^<]*)<\/text>\s*<text[^>]*>commits<\/text>/);
+    if (!total || total[1].trim() !== expectedTotal) {
       problems.push(fileName + ': does not show "' + expectedTotal + ' commits"');
     }
+    const texts = Array.from(svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g), match => match[1].trim());
     if (!texts.includes(start + ' / ' + end)) problems.push(fileName + ': does not cover ' + start + ' / ' + end);
   }
   return problems;

@@ -14,7 +14,11 @@ function sameLogin(a, b) {
 }
 
 // Public repositories come from the public listing (always complete); the
-// owner token adds the private ones. Forks are other people's projects.
+// owner token adds the private ones it can read. A token never reveals the
+// private repositories it was not granted, so private coverage is 'complete'
+// only when GitHub reports the account's private repository count and every
+// one of them was listed; otherwise it is 'token' (all the token can read).
+// Forks are other people's projects.
 export async function listOwnedRepositories({ client, owner, includePrivate }) {
   const repositories = new Map();
   const forks = new Set();
@@ -26,6 +30,7 @@ export async function listOwnedRepositories({ client, owner, includePrivate }) {
 
   const listed = await client.paginate('/users/' + encodeURIComponent(owner) + '/repos', { type: 'owner' });
   listed.items.forEach(consider);
+  let privateCoverage = 'not_configured';
   if (includePrivate) {
     const identity = await client.request('/user');
     if (!sameLogin(identity.data?.login, owner)) {
@@ -33,10 +38,17 @@ export async function listOwnedRepositories({ client, owner, includePrivate }) {
     }
     const owned = await client.paginate('/user/repos', { affiliation: 'owner', visibility: 'all' });
     owned.items.forEach(consider);
+    const privateListed = owned.items.filter(repo => repo?.private && sameLogin(repo.owner?.login, owner)).length;
+    const privateTotal = identity.data.owned_private_repos;
+    if (Number.isInteger(privateTotal) && privateListed < privateTotal) {
+      throw new Error('PROFILE_STATS_TOKEN reads ' + privateListed + ' of the ' + privateTotal +
+        ' private repositories of ' + owner + '; give it access to all repositories');
+    }
+    privateCoverage = Number.isInteger(privateTotal) ? 'complete' : 'token';
   }
   const sorted = Array.from(repositories.values())
     .sort((a, b) => String(a.full_name).localeCompare(String(b.full_name)));
-  return { repositories: sorted, forks: forks.size };
+  return { repositories: sorted, forks: forks.size, privateCoverage };
 }
 
 async function collectRepository({ client, owner, repo, ledger, totals }) {
@@ -74,7 +86,8 @@ export async function collectActivity({
   client, owner, includePrivate, now = new Date(), timeZone = TIME_ZONE, log = () => {},
   listRepositories = listOwnedRepositories
 }) {
-  const { repositories, forks } = await listRepositories({ client, owner, includePrivate });
+  const { repositories, forks, privateCoverage = includePrivate ? 'token' : 'not_configured' } =
+    await listRepositories({ client, owner, includePrivate });
   const ledger = createLedger({ now, timeZone });
   const totals = {
     repositories: { analyzed: 0, with_commits: 0, public: 0, private: 0, archived: 0, empty: 0, forks_excluded: forks },
@@ -113,7 +126,7 @@ export async function collectActivity({
     daily: summary.daily,
     languages: summary.languages,
     repositories: totals.repositories,
-    coverage: { public: 'complete', private: includePrivate ? 'complete' : 'not_configured' },
+    coverage: { public: 'complete', private: privateCoverage },
     excluded: { ...summary.excluded, generated_branches: totals.excluded.generated_branches },
     branches: totals.branches,
     api: { requests: client.requestCount, rate_limit_remaining: client.rateLimit?.remaining ?? null }

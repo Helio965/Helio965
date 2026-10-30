@@ -77,9 +77,12 @@ export function computeStreaks(activeDays, today) {
 
 export function createLedger({ now = new Date(), timeZone = TIME_ZONE } = {}) {
   const days = new Map();
-  // Shared by all repositories: a commit object reachable from several
-  // branches, or pushed to two repositories, is the same work.
+  // Shared by all repositories, so the result does not depend on the order
+  // they are read in: a commit object reachable from several branches or
+  // repositories is the same work, and so is a rebased or cherry-picked copy
+  // (new SHA, same author, author date and subject).
   const shas = new Set();
+  const signatures = new Set();
   // Same counts split by the primary language of each repository (no names).
   const languages = new Map();
   const excluded = { merge_commits: 0, automation_commits: 0, duplicate_copies: 0, future_dated: 0 };
@@ -98,10 +101,8 @@ export function createLedger({ now = new Date(), timeZone = TIME_ZONE } = {}) {
   }
 
   return {
-    // A rebased or cherry-picked copy (new SHA, same author, author date and
-    // subject) is recognised within its repository and counted once.
+    // Counts per repository; the language goes to the per-language series.
     repository({ language = null } = {}) {
-      const signatures = new Set();
       let repoCounted = 0;
       return {
         has: sha => shas.has(sha),

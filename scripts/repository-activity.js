@@ -35,18 +35,33 @@ export function checkConsistency(activity, previous, { allowDrop = false } = {})
   if (activity.repositories.analyzed === 0 || activity.commits.total === 0) problems.push('no repositories or commits were found');
   const { current, longest } = activity.streaks;
   if (current.length > longest.length || longest.length > activity.commits.active_days) problems.push('streaks are inconsistent');
-  if (previous?.commits && previous.coverage?.private === activity.coverage.private && !allowDrop &&
-      activity.commits.total < previous.commits.total * (1 - MAX_DROP)) {
-    problems.push('total commits fell from ' + previous.commits.total + ' to ' + activity.commits.total +
-      ' with the same coverage; run the workflow manually with allow_decrease if this is expected');
+  // Compare with the last published data only when both read the same kind
+  // of repositories (public only, or public plus private).
+  const readsPrivate = data => data?.coverage?.private !== 'not_configured';
+  if (previous?.commits && readsPrivate(previous) === readsPrivate(activity) && !allowDrop) {
+    const hint = '; run the workflow manually with allow_decrease if this is expected';
+    if (activity.commits.total < previous.commits.total * (1 - MAX_DROP)) {
+      problems.push('total commits fell from ' + previous.commits.total + ' to ' + activity.commits.total + ' with the same coverage' + hint);
+    }
+    // A token that lost access to some repositories hides them without any error.
+    if (readsPrivate(activity) && activity.repositories.private < (previous.repositories?.private ?? 0)) {
+      problems.push('private repositories read fell from ' + previous.repositories.private + ' to ' + activity.repositories.private +
+        '; check the repository access of PROFILE_STATS_TOKEN' + hint);
+    }
   }
   return problems;
+}
+
+export function coverageText({ coverage, repositories }) {
+  if (coverage.private === 'complete') return 'completa (' + repositories.private + ' repositórios privados)';
+  if (coverage.private === 'token') return repositories.private + ' repositórios privados lidos com o PROFILE_STATS_TOKEN';
+  return 'não configurada (PROFILE_STATS_TOKEN ausente)';
 }
 
 function writeStepSummary(activity) {
   const file = process.env.GITHUB_STEP_SUMMARY;
   if (!file) return;
-  const { commits, streaks, repositories, coverage, excluded } = activity;
+  const { commits, streaks, repositories, excluded } = activity;
   const lines = [
     '### Atividade dos projetos',
     '',
@@ -57,7 +72,7 @@ function writeStepSummary(activity) {
     '| Dias consecutivos | ' + streaks.current.length + (streaks.current.start ? ' (' + streaks.current.start + ' a ' + streaks.current.end + ')' : '') + ' |',
     '| Maior sequência | ' + streaks.longest.length + (streaks.longest.start ? ' (' + streaks.longest.start + ' a ' + streaks.longest.end + ')' : '') + ' |',
     '| Repositórios analisados | ' + repositories.analyzed + ' (' + repositories.public + ' públicos, ' + repositories.private + ' privados) |',
-    '| Cobertura dos privados | ' + (coverage.private === 'complete' ? 'completa' : 'não configurada (PROFILE_STATS_TOKEN ausente)') + ' |',
+    '| Cobertura dos privados | ' + coverageText(activity) + ' |',
     '| Merges não contados | ' + excluded.merge_commits + ' |',
     ''
   ];
@@ -76,9 +91,14 @@ async function main() {
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, JSON.stringify(activity, null, 2) + '\n', 'utf8');
   writeStepSummary(activity);
-  if (activity.coverage.private !== 'complete') {
+  if (activity.coverage.private === 'not_configured') {
     console.log('::warning title=Repositórios privados fora da contagem::Configure o secret PROFILE_STATS_TOKEN ' +
-      '(token fine-grained de ' + owner + ' com Contents: read) para incluir os repositórios privados.');
+      '(token fine-grained de ' + owner + ' com acesso a todos os repositórios e Contents: read) para incluir os repositórios privados.');
+  } else if (activity.repositories.private === 0) {
+    console.log('::warning title=Nenhum repositório privado lido::O PROFILE_STATS_TOKEN não lê nenhum repositório privado; ' +
+      'confira se ele tem acesso a todos os repositórios (All repositories) com Contents: read.');
+  } else {
+    console.log('::notice title=Repositórios privados::' + coverageText(activity) + '.');
   }
   // Aggregate figures only: private repository names never reach the public log.
   console.log(JSON.stringify({

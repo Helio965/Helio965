@@ -51,13 +51,28 @@ test('merge commits are not counted again on top of the merged work', () => {
   assert.equal(summary.excluded.merge_commits, 1);
 });
 
-test('a rebased or cherry-picked copy of a commit is counted once', () => {
+test('a rebased or cherry-picked copy of a commit is counted once, in any repository', () => {
   const original = item({ message: 'fix: horário de Brasília\n\nbody', date: '2026-10-27T12:00:00Z' });
   const copy = item({ message: 'fix: horário de Brasília\n\nbody', date: '2026-10-27T12:00:00Z', committed: '2026-10-28T09:00:00Z' });
   const { summary, results } = ledgerWith([original, copy], [{ ...copy, sha: 'c'.repeat(40) }]);
-  assert.deepEqual(results, [['counted', 'duplicate'], ['counted']]);
-  assert.equal(summary.total, 2);
-  assert.equal(summary.excluded.duplicate_copies, 1);
+  assert.deepEqual(results, [['counted', 'duplicate'], ['duplicate']]);
+  assert.equal(summary.total, 1);
+  assert.equal(summary.excluded.duplicate_copies, 2);
+});
+
+test('the result does not depend on the order repositories are read in', () => {
+  // A repository mirrors another one's main (same SHAs), and the other still has
+  // the original of a commit that was rebased onto main.
+  const original = item({ message: 'feat: relatório', date: '2026-10-20T15:00:00Z' });
+  const rebased = { ...original, sha: 'b'.repeat(40), commit: { ...original.commit, committer: { ...original.commit.committer, date: '2026-10-21T10:00:00Z' } } };
+  const shared = item({ date: '2026-10-22T15:00:00Z' });
+  const development = [shared, rebased, original];
+  const mirror = [shared, rebased];
+  const forward = ledgerWith(development, mirror).summary;
+  const backward = ledgerWith(mirror, development).summary;
+  assert.equal(forward.total, 2);
+  assert.deepEqual(backward.daily, forward.daily);
+  assert.equal(backward.total, forward.total);
 });
 
 test('GitHub Actions commits are automation, not development', () => {

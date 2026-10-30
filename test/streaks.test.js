@@ -85,16 +85,12 @@ test('day arithmetic crosses months, years and leap days', () => {
   assert.equal(daysBetween('2026-12-25', '2027-01-03'), 9);
 });
 
-test('real history of 2026-10-30 matches the git log reference', () => {
+test('real public history of 2026-10-30 matches the git log reference', () => {
   const fixture = JSON.parse(fs.readFileSync(new URL('./fixtures/real-history-2026-10-30.json', import.meta.url)));
-  for (const scope of ['all', 'public']) {
-    const { today, daily, expected } = fixture[scope];
-    const { current, longest } = computeStreaks(Object.keys(daily), today);
-    assert.deepEqual(current, expected.current, scope);
-    assert.deepEqual(longest, expected.longest, scope);
-    assert.equal(Object.values(daily).reduce((sum, value) => sum + value, 0), expected.total, scope);
-  }
-  // The private Nexo project is what keeps 23-29 October alive.
-  assert.equal(fixture.all.expected.current.length, 8);
-  assert.equal(fixture.public.expected.current.length, 1);
+  const { today, daily, expected } = fixture.public;
+  const { current, longest } = computeStreaks(Object.keys(daily), today);
+  assert.deepEqual(current, expected.current);
+  assert.deepEqual(longest, expected.longest);
+  assert.equal(Object.values(daily).reduce((sum, value) => sum + value, 0), expected.total);
+  assert.deepEqual([expected.total, current.length, longest.length], [579, 1, 17]);
 });

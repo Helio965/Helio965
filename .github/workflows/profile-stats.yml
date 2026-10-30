@@ -51,12 +51,20 @@ jobs:
       # The deploy replaces the whole branch, so start from the files published
       # now: a card that cannot be regenerated today keeps yesterday's image
       # (and its matching numbers) instead of disappearing from the README.
+      # Only a missing branch (exit 2) means there is nothing to restore; any
+      # other error stops here, since the drop check needs the previous data.
       - name: restore the last published cards
         env:
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
         run: |
           mkdir -p dist
-          if git ls-remote --exit-code --heads "$REPO_URL" output-stats > /dev/null; then
+          status=0
+          git ls-remote --exit-code --heads "$REPO_URL" output-stats > /dev/null || status=$?
+          if [ "$status" -ne 0 ] && [ "$status" -ne 2 ]; then
+            echo "::error::could not read the output-stats branch (git exit $status)"
+            exit 1
+          fi
+          if [ "$status" -eq 0 ]; then
             git clone --quiet --depth 1 --branch output-stats "$REPO_URL" previous
             for file in activity.json stats.svg stats-dark.svg all-activity.svg all-activity-dark.svg top-langs.svg top-langs-dark.svg; do
               if [ -f "previous/$file" ]; then cp "previous/$file" dist/; fi

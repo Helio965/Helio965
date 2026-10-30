@@ -104,14 +104,27 @@ export function createGitHubClient({
           reset: Number(response.headers.get('x-ratelimit-reset'))
         };
       }
+      // The timeout also covers the body: a body cut short is a network
+      // failure and is retried like one; only a complete body that is not
+      // JSON counts as malformed.
+      let text;
+      try {
+        text = await response.text();
+      } catch (error) {
+        if (attempt < maxAttempts) {
+          await sleep(1000 * 2 ** (attempt - 1));
+          continue;
+        }
+        const reason = error?.name === 'TimeoutError' ? 'timed out after ' + timeoutMs + ' ms' : (error?.message || String(error));
+        throw new GitHubApiError('Network failure reading ' + endpoint + ' (' + reason + ') after ' + attempt + ' attempts', { kind: 'network' });
+      }
       if (response.ok) {
         try {
-          return { status: response.status, data: await response.json(), headers: response.headers };
+          return { status: response.status, data: JSON.parse(text), headers: response.headers };
         } catch {
           throw new GitHubApiError('Invalid JSON from ' + endpoint, { status: response.status, kind: 'malformed' });
         }
       }
-      const text = await response.text().catch(() => '');
       if (allow.includes(response.status)) return { status: response.status, data: null, headers: response.headers };
 
       const delay = rateLimitDelay(response, text);
@@ -137,7 +150,9 @@ export function createGitHubClient({
   // Follows rel="next" links until the last page. The query of the next link
   // (page number or cursor) is applied to the original path, which avoids the
   // /repositories/:id form some proxies reject. Returns { status, items }; an
-  // allowed non-2xx status (e.g. 409 for an empty repository) yields no items.
+  // allowed non-2xx status on the first page (e.g. 409 for an empty
+  // repository) yields no items, while on a later page it means the list was
+  // cut short and is refused.
   async function paginate(path, params = {}, { allow = [], maxPages = 1000 } = {}) {
     const items = [];
     let query = { ...params, per_page: 100 };
@@ -146,7 +161,10 @@ export function createGitHubClient({
         throw new GitHubApiError('More than ' + maxPages + ' pages at ' + describeEndpoint(path) + '; refusing a partial count', { kind: 'limit' });
       }
       const response = await request(path, query, { allow });
-      if (response.data === null) return { status: response.status, items };
+      if (response.data === null) {
+        if (page === 1) return { status: response.status, items };
+        throw new GitHubApiError('List from ' + describeEndpoint(path) + ' ended with HTTP ' + response.status + ' after ' + items.length + ' items; refusing a partial count', { status: response.status, kind: 'incomplete' });
+      }
       if (!Array.isArray(response.data)) {
         throw new GitHubApiError('Expected a list from ' + describeEndpoint(path), { status: response.status, kind: 'malformed' });
       }

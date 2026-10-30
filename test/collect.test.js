@@ -6,7 +6,7 @@ const NOW = new Date('2026-10-30T18:00:00Z');
 const sha = label => Buffer.from(label).toString('hex').padEnd(40, '0');
 
 // In-memory GitHub: repositories with commit graphs and branch heads.
-function fakeGitHub({ login = 'Helio965', repos }) {
+function fakeGitHub({ login = 'Helio965', repos, ownedPrivate, hidden = [] }) {
   const calls = [];
   const byName = new Map(repos.map(repo => [repo.name, repo]));
   const history = (repo, head) => {
@@ -42,13 +42,14 @@ function fakeGitHub({ login = 'Helio965', repos }) {
     rateLimit: { remaining: 4999 },
     async request(path) {
       calls.push(path);
-      if (path === '/user') return { data: { login } };
+      if (path === '/user') return { data: { login, ...(ownedPrivate === undefined ? {} : { owned_private_repos: ownedPrivate }) } };
       throw new Error('unexpected ' + path);
     },
     async paginate(path, params = {}) {
       calls.push(path + (params.sha ? '@' + params.sha.slice(0, 6) : ''));
       if (path === '/users/Helio965/repos') return { items: repos.filter(repo => !repo.private).map(meta) };
-      if (path === '/user/repos') return { items: repos.map(meta) };
+      // A fine-grained token only lists the repositories it was granted.
+      if (path === '/user/repos') return { items: repos.filter(repo => !hidden.includes(repo.name)).map(meta) };
       const match = path.match(/^\/repos\/Helio965\/([^/]+)\/(branches|commits)$/);
       const repo = match && byName.get(decodeURIComponent(match[1]));
       if (!repo) throw new Error('GitHub API 404 at /repos/:owner/:repo');
@@ -85,7 +86,7 @@ const REPOS = () => [
     branches: { main: 'm2', 'codex/feature': 'f1' }
   },
   { id: 3, name: 'Empty', commits: {}, branches: {} },
-  { id: 4, name: 'Kernel', private: true, commits: { k1: { parents: [], date: day('2026-10-24'), author: 'Claude', login: null } }, branches: { main: 'k1' } },
+  { id: 4, name: 'Private-Project', private: true, commits: { k1: { parents: [], date: day('2026-10-24'), author: 'Claude', login: null } }, branches: { main: 'k1' } },
   { id: 5, name: 'MedAlert-CLI', fork: true, commits: {}, branches: {} },
   { id: 6, name: 'Someone-Else', owner: 'someone', commits: {}, branches: {} }
 ];
@@ -98,7 +99,8 @@ test('collects public and private repositories with every rule applied once', as
     '2026-10-20': 1, '2026-10-21': 1, '2026-10-24': 1, '2026-10-28': 1, '2026-10-29': 1, '2026-10-30': 1
   });
   assert.deepEqual(activity.repositories, { analyzed: 4, with_commits: 3, public: 3, private: 1, archived: 1, empty: 1, forks_excluded: 1 });
-  assert.deepEqual(activity.coverage, { public: 'complete', private: 'complete' });
+  // Without the account's private repository count, coverage is what the token reads.
+  assert.deepEqual(activity.coverage, { public: 'complete', private: 'token' });
   assert.equal(activity.excluded.merge_commits, 1);
   assert.equal(activity.excluded.generated_branches, 1);
   assert.equal(activity.excluded.automation_commits, 0, 'output branches are skipped before reading them');
@@ -107,7 +109,7 @@ test('collects public and private repositories with every rule applied once', as
   assert.ok(!calls.some(call => call.includes('output-stats') || call.endsWith('@' + sha('o1').slice(0, 6))));
   assert.deepEqual(activity.streaks.current, { length: 3, start: '2026-10-28', end: '2026-10-30' });
   assert.equal(activity.commits.last_30_days, 6);
-  assert.ok(!JSON.stringify(activity).includes('Kernel'), 'private repository names stay out of the data');
+  assert.ok(!JSON.stringify(activity).includes('Private-Project'), 'private repository names stay out of the data');
 });
 
 test('without the owner token only public repositories are read and coverage says so', async () => {
@@ -126,10 +128,10 @@ test('a token of another account is refused', async () => {
 
 test('a failure stops the collection and never names a private repository', async () => {
   const repos = REPOS();
-  repos.find(repo => repo.name === 'Kernel').fail = true;
+  repos.find(repo => repo.name === 'Private-Project').fail = true;
   const { client } = fakeGitHub({ repos });
   await assert.rejects(collectActivity({ client, owner: 'Helio965', includePrivate: true, now: NOW }), error =>
-    /Collection failed for a private repository/.test(error.message) && !error.message.includes('Kernel'));
+    /Collection failed for a private repository/.test(error.message) && !error.message.includes('Private-Project'));
 
   const publicFailure = REPOS();
   publicFailure.find(repo => repo.name === 'Connectagro').fail = true;
@@ -143,4 +145,16 @@ test('a branch listing without head commit is treated as an incomplete response'
   const original = client.paginate;
   client.paginate = async (path, params) => path.endsWith('/branches') ? { items: [{ name: 'main', commit: null }] } : original(path, params);
   await assert.rejects(collectActivity({ client, owner: 'Helio965', includePrivate: false, now: NOW }), /Malformed branch listing/);
+});
+
+test('private coverage is complete only when every private repository was read', async () => {
+  const full = fakeGitHub({ repos: REPOS(), ownedPrivate: 1 });
+  const activity = await collectActivity({ client: full.client, owner: 'Helio965', includePrivate: true, now: NOW });
+  assert.equal(activity.coverage.private, 'complete');
+  assert.equal(activity.repositories.private, 1);
+
+  const repos = [...REPOS(), { id: 7, name: 'Hidden-Project', private: true, commits: {}, branches: {} }];
+  const partial = fakeGitHub({ repos, ownedPrivate: 2, hidden: ['Hidden-Project'] });
+  await assert.rejects(collectActivity({ client: partial.client, owner: 'Helio965', includePrivate: true, now: NOW }), error =>
+    /reads 1 of the 2 private repositories/.test(error.message) && !error.message.includes('Hidden-Project'));
 });

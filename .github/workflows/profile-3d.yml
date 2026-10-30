@@ -1,11 +1,11 @@
 name: generate 3d contributions
 
 on:
-  # Runs right after the stats workflow publishes activity.json.
+  # Runs right after any run of the stats workflow, which is what publishes
+  # activity.json (manual runs from other branches publish it too).
   workflow_run:
     workflows: ["generate profile stats"]
     types: [completed]
-    branches: [main]
   schedule:
     - cron: "57 3 * * *"
   workflow_dispatch:
