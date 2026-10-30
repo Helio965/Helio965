@@ -4,13 +4,22 @@ on:
   schedule:
     - cron: "37 3 * * *"
   workflow_dispatch:
+    inputs:
+      allow_decrease:
+        description: "Aceitar uma queda grande no total de commits (por exemplo, depois de apagar um repositório)"
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
-      - "scripts/repository-activity.js"
+      - "scripts/**"
+      - "test/**"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/profile-stats.yml"
       - "README.md"
 
+# One run at a time publishes output-stats; a newer run replaces an older one.
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
@@ -20,34 +29,73 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
-      - name: checkout repository activity script
+      - name: checkout
         uses: actions/checkout@v6
         with:
           persist-credentials: false
 
-      # GitHub Readme Stats cards, rendered here instead of relying on the
-      # rate-limited public instance. The username defaults to the repo owner.
-      - name: generate stats card (light)
-        uses: stats-organization/github-readme-stats-action@v2
+      - name: set up node
+        uses: actions/setup-node@v6
         with:
-          card: stats
-          options: username=${{ github.repository_owner }}&show_icons=true&hide=commits&hide_border=true&locale=pt-br&custom_title=Estat%C3%ADsticas%20do%20GitHub
-          path: dist/stats.svg
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fail_on_error: "true"
+          node-version: 24
+          cache: npm
 
-      - name: generate stats card (dark)
-        uses: stats-organization/github-readme-stats-action@v2
-        with:
-          card: stats
-          options: username=${{ github.repository_owner }}&show_icons=true&hide=commits&hide_border=true&locale=pt-br&custom_title=Estat%C3%ADsticas%20do%20GitHub&theme=github_dark
-          path: dist/stats-dark.svg
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fail_on_error: "true"
+      - name: install dependencies
+        run: npm ci
+
+      - name: run tests
+        run: npm test
+
+      # The deploy replaces the whole branch, so start from the files published
+      # now: a card that cannot be regenerated today keeps yesterday's image
+      # (and its matching numbers) instead of disappearing from the README.
+      - name: restore the last published cards
+        env:
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          mkdir -p dist
+          if git ls-remote --exit-code --heads "$REPO_URL" output-stats > /dev/null; then
+            git clone --quiet --depth 1 --branch output-stats "$REPO_URL" previous
+            for file in activity.json stats.svg stats-dark.svg all-activity.svg all-activity-dark.svg top-langs.svg top-langs-dark.svg; do
+              if [ -f "previous/$file" ]; then cp "previous/$file" dist/; fi
+            done
+            for theme in github github_dark; do
+              if [ -d "previous/summary/$theme" ]; then mkdir -p dist/summary && cp -r "previous/summary/$theme" dist/summary/; fi
+            done
+          fi
+
+      # Commits by any author in every repository of the account, counted once.
+      # PROFILE_STATS_TOKEN (fine-grained, read-only) adds the private ones.
+      - name: collect project activity
+        id: activity
+        continue-on-error: true
+        env:
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROFILE_STATS_TOKEN: ${{ secrets.PROFILE_STATS_TOKEN }}
+          ACTIVITY_OUTPUT: build/activity.json
+          PREVIOUS_ACTIVITY: dist/activity.json
+          ALLOW_DECREASE: ${{ inputs.allow_decrease == true }}
+        run: node scripts/repository-activity.js
+
+      # Stats card (GitHub Readme Stats) and streak card (Streak Stats) from the
+      # same activity file; activity.json and the four SVGs are written together.
+      - name: render the stats and streak cards
+        id: cards
+        if: steps.activity.outcome == 'success'
+        continue-on-error: true
+        env:
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTIVITY_FILE: build/activity.json
+          CARDS_OUTPUT: dist
+        run: node scripts/render-profile-cards.js
 
       - name: generate top languages card (light)
+        id: langs_light
+        continue-on-error: true
         uses: stats-organization/github-readme-stats-action@v2
         with:
           card: top-langs
@@ -57,6 +105,8 @@ jobs:
           fail_on_error: "true"
 
       - name: generate top languages card (dark)
+        id: langs_dark
+        continue-on-error: true
         uses: stats-organization/github-readme-stats-action@v2
         with:
           card: top-langs
@@ -68,6 +118,8 @@ jobs:
       # Profile summary cards (contribution timeline, commits per language,
       # productive hours). AUTO_PUSH is off so nothing is committed to main.
       - name: generate profile summary cards
+        id: summary
+        continue-on-error: true
         uses: vn7n24fzkq/github-profile-summary-cards@v0.12.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -76,23 +128,24 @@ jobs:
           UTC_OFFSET: -3
           AUTO_PUSH: false
 
+      # The action only logs a card that failed, so check each file before
+      # replacing the published light and dark themes.
       - name: keep only the light and dark summary themes
+        id: summary_copy
+        if: steps.summary.outcome == 'success'
+        continue-on-error: true
         run: |
+          for theme in github github_dark; do
+            for card in 0-profile-details 1-repos-per-language 2-most-commit-language 4-productive-time; do
+              test -s "profile-summary-card-output/$theme/$card.svg" || { echo "::error::summary card $theme/$card.svg was not generated"; exit 1; }
+            done
+          done
           mkdir -p dist/summary
+          rm -rf dist/summary/github dist/summary/github_dark
           cp -r profile-summary-card-output/github profile-summary-card-output/github_dark dist/summary/
 
-      # This separate card counts distinct commits in my repositories, by any
-      # author (including Claude and Codex), rather than official contributions.
-      # PROFILE_STATS_TOKEN is an optional fine-grained PAT for private repo READ
-      # access. Without it the card explicitly labels public-only statistics.
-      - name: generate repository-wide commit and streak cards
-        env:
-          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-          ACTIVITY_READ_TOKEN: ${{ secrets.PROFILE_STATS_TOKEN || secrets.GITHUB_TOKEN }}
-          HAS_PRIVATE_TOKEN: ${{ secrets.PROFILE_STATS_TOKEN != '' }}
-        run: |
-          node --check scripts/repository-activity.js
-          node scripts/repository-activity.js
+      - name: check every image before publishing
+        run: node scripts/check-profile-images.js dist
 
       - name: push cards to the output-stats branch
         uses: crazy-max/ghaction-github-pages@v5
@@ -101,3 +154,25 @@ jobs:
           build_dir: dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Runs after the deploy so every card that worked is published, but the
+      # run turns red when any card kept yesterday's version.
+      - name: fail when a card could not be refreshed
+        if: always()
+        env:
+          OUTCOMES: >-
+            activity=${{ steps.activity.outcome }}
+            cards=${{ steps.cards.outcome }}
+            top-langs-light=${{ steps.langs_light.outcome }}
+            top-langs-dark=${{ steps.langs_dark.outcome }}
+            summary=${{ steps.summary.outcome }}
+            summary-themes=${{ steps.summary_copy.outcome }}
+        run: |
+          failed=0
+          for entry in $OUTCOMES; do
+            if [ "${entry#*=}" != "success" ]; then
+              echo "::error title=Cartão não atualizado::${entry%%=*} (${entry#*=}); a versão anterior foi mantida"
+              failed=1
+            fi
+          done
+          exit "$failed"
