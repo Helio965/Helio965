@@ -177,6 +177,8 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
 
 ## 📈 Atividade
 
+<p align="center"><sub>Linha do tempo, horários e linguagens com base nos dados oficiais de contribuições do GitHub.</sub></p>
+
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/summary/github_dark/0-profile-details.svg" />
@@ -194,7 +196,7 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
 
 ## 🐍 Contribuições
 
-<p align="center"><sub>Visualizações geradas automaticamente todos os dias por GitHub Actions a partir do meu gráfico de contribuições.</sub></p>
+<p align="center"><sub>Visualizações geradas automaticamente todos os dias por GitHub Actions: o Snake percorre o gráfico de contribuições do GitHub e o gráfico 3D mostra os commits diários dos meus projetos.</sub></p>
 
 ### Snake
 
@@ -209,7 +211,7 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-3d/profile-night-rainbow.svg" />
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-3d/profile-south-season-animate.svg" />
-  <img alt="Gráfico 3D das contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-3d/profile-south-season-animate.svg" />
+  <img alt="Gráfico 3D dos commits diários dos projetos de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-3d/profile-south-season-animate.svg" />
 </picture>
 
 ## 🎮 Arcade de contribuições
@@ -226,7 +228,7 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
 
 <details>
   <summary><b>👾 Commit Invaders</b></summary>
-  <br />
+  <p><sub>A pontuação do jogo soma as contribuições do gráfico do GitHub no último ano.</sub></p>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-invaders/commit-invaders-dark.svg" />
     <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-invaders/commit-invaders.svg" />
@@ -316,11 +318,11 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
 
 <details>
   <summary><b>🏡 Vila Maeul in the Sky</b></summary>
-  <br />
+  <p><sub>Construída com os commits diários dos meus projetos.</sub></p>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-maeul/maeul-in-the-sky-dark.svg" />
     <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-maeul/maeul-in-the-sky-light.svg" />
-    <img alt="Vila isométrica construída a partir das contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-maeul/maeul-in-the-sky-dark.svg" />
+    <img alt="Vila isométrica construída a partir dos commits diários dos projetos de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-maeul/maeul-in-the-sky-dark.svg" />
   </picture>
 </details>
 

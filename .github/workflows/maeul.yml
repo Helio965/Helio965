@@ -1,6 +1,11 @@
 name: generate maeul village
 
 on:
+  # Runs right after the stats workflow publishes activity.json.
+  workflow_run:
+    workflows: ["generate profile stats"]
+    types: [completed]
+    branches: [main]
   schedule:
     - cron: "47 4 * * *"
   workflow_dispatch:
@@ -16,8 +21,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: create output folder
-        run: mkdir -p dist
+      - name: checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: set up node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      # The village is built from the same activity file as the stats cards,
+      # through the action's documented snapshot input (no GitHub request).
+      - name: build the village snapshot from the project activity
+        env:
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          git clone --quiet --depth 1 --branch output-stats "$REPO_URL" stats
+          node scripts/maeul-snapshot.js stats/activity.json maeul.snapshot.json
+          mkdir -p dist
 
       - name: generate village svgs
         uses: t1seo/maeul-in-the-sky@v2.1.0
@@ -25,7 +47,14 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           username: ${{ github.repository_owner }}
           hemisphere: south
+          input: maeul.snapshot.json
           output_dir: dist
+
+      - name: check the generated svgs
+        run: |
+          for mode in dark light; do
+            test -s "dist/maeul-in-the-sky-$mode.svg"
+          done
 
       - name: push svgs to the output-maeul branch
         uses: crazy-max/ghaction-github-pages@v5
