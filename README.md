@@ -312,7 +312,7 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
 
 <details>
   <summary><b>🌆 GitWorld</b></summary>
-  <br />
+  <p><sub>O total e a sequência mostrados na cidade vêm do gráfico de contribuições do GitHub.</sub></p>
   <img alt="Cidade animada construída a partir das contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-gitworld/gitworld.svg" />
 </details>
 

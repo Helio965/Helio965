@@ -56,7 +56,7 @@ Os demais jogos têm agendas próprias e continuam independentes.
 
 Limitações conhecidas:
 
-- O Commit Invaders escreve “COMMITS” por padrão, mas soma as contribuições oficiais do último ano. Só daria para mudar interceptando o código empacotado da action, o que deixaria o jogo frágil; por isso o README explica a pontuação.
+- O Commit Invaders escreve “COMMITS” e o GitWorld escreve “commits” e “streak”, mas os dois contam as contribuições oficiais do último ano (o GitWorld sem tolerância para o dia atual). Só daria para mudar interceptando as requisições do código empacotado dessas actions, o que deixaria os jogos frágeis; por isso o README identifica a fonte desses números.
 - Os summary cards (linha do tempo, horários, linguagens por commit) usam apenas commits atribuídos à conta no GitHub. A action não aceita outra fonte de dados.
 - O 3D e o Maeul mostram o último ano; os cartões mostram o histórico completo. Hoje toda a atividade cabe no último ano, então os totais coincidem.
 
