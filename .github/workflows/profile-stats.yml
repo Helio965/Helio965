@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "37 3 * * *"
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/repository-activity.js"
+      - ".github/workflows/profile-stats.yml"
+      - "README.md"
 
 concurrency:
   group: ${{ github.workflow }}
@@ -22,7 +28,7 @@ jobs:
         uses: stats-organization/github-readme-stats-action@v2
         with:
           card: stats
-          options: username=${{ github.repository_owner }}&show_icons=true&include_all_commits=true&hide_border=true&locale=pt-br&custom_title=Estat%C3%ADsticas%20do%20GitHub
+          options: username=${{ github.repository_owner }}&show_icons=true&hide=commits&hide_border=true&locale=pt-br&custom_title=Estat%C3%ADsticas%20do%20GitHub
           path: dist/stats.svg
           token: ${{ secrets.GITHUB_TOKEN }}
           fail_on_error: "true"
@@ -31,7 +37,7 @@ jobs:
         uses: stats-organization/github-readme-stats-action@v2
         with:
           card: stats
-          options: username=${{ github.repository_owner }}&show_icons=true&include_all_commits=true&hide_border=true&locale=pt-br&custom_title=Estat%C3%ADsticas%20do%20GitHub&theme=github_dark
+          options: username=${{ github.repository_owner }}&show_icons=true&hide=commits&hide_border=true&locale=pt-br&custom_title=Estat%C3%ADsticas%20do%20GitHub&theme=github_dark
           path: dist/stats-dark.svg
           token: ${{ secrets.GITHUB_TOKEN }}
           fail_on_error: "true"
@@ -69,6 +75,24 @@ jobs:
         run: |
           mkdir -p dist/summary
           cp -r profile-summary-card-output/github profile-summary-card-output/github_dark dist/summary/
+
+      # This separate card counts distinct commits in my repositories, by any
+      # author (including Claude and Codex), rather than official contributions.
+      # PROFILE_STATS_TOKEN is an optional fine-grained PAT for private repo READ
+      # access. Without it the card explicitly labels public-only statistics.
+      - name: checkout repository activity script
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: generate repository-wide commit and streak cards
+        env:
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          ACTIVITY_READ_TOKEN: ${{ secrets.PROFILE_STATS_TOKEN || secrets.GITHUB_TOKEN }}
+          HAS_PRIVATE_TOKEN: ${{ secrets.PROFILE_STATS_TOKEN != '' }}
+        run: |
+          node --check scripts/repository-activity.js
+          node scripts/repository-activity.js
 
       - name: push cards to the output-stats branch
         uses: crazy-max/ghaction-github-pages@v5
