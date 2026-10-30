@@ -22,6 +22,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - name: checkout repository activity script
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
       # GitHub Readme Stats cards, rendered here instead of relying on the
       # rate-limited public instance. The username defaults to the repo owner.
       - name: generate stats card (light)
@@ -80,11 +85,6 @@ jobs:
       # author (including Claude and Codex), rather than official contributions.
       # PROFILE_STATS_TOKEN is an optional fine-grained PAT for private repo READ
       # access. Without it the card explicitly labels public-only statistics.
-      - name: checkout repository activity script
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-
       - name: generate repository-wide commit and streak cards
         env:
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
