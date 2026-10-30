@@ -154,15 +154,13 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/stats-dark.svg" />
-    <img height="165" src="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/stats.svg" alt="Estatísticas oficiais do GitHub de Helio965: pull requests, issues e estrelas" />
+    <img height="165" src="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/stats.svg" alt="Estatísticas do GitHub de Helio965: commits, pull requests, issues e estrelas" />
   </picture>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/all-activity-dark.svg" />
-    <img height="190" src="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/all-activity.svg" alt="Quantidade de commits em todos os repositórios acessíveis e dias consecutivos de atividade, incluindo commits de IA" />
+    <img height="165" src="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/all-activity.svg" alt="Total de commits, dias consecutivos e maior sequência de Helio965" />
   </picture>
 </div>
-
-<p align="center"><sub>O cartão de atividade soma commits únicos feitos por qualquer autor, inclusive por Claude e Codex, nos repositórios próprios acessíveis e em suas branches (sem contar os branches de imagens automáticas do perfil). Trata-se da atividade dos projetos de Helio965, e não de créditos pessoais ou do gráfico oficial de contribuições do GitHub. Repositórios privados entram na soma quando o secret <code>PROFILE_STATS_TOKEN</code> permite sua leitura. Atualização diária por GitHub Actions.</sub></p>
 
 ## 💻 Linguagens mais utilizadas
 
@@ -178,6 +176,8 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
 </div>
 
 ## 📈 Atividade
+
+<p align="center"><sub>Linha do tempo, horários e linguagens com base nos dados oficiais de contribuições do GitHub.</sub></p>
 
 <div align="center">
   <picture>
@@ -196,7 +196,7 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
 
 ## 🐍 Contribuições
 
-<p align="center"><sub>Visualizações geradas automaticamente todos os dias por GitHub Actions a partir do meu gráfico de contribuições.</sub></p>
+<p align="center"><sub>Visualizações geradas automaticamente todos os dias por GitHub Actions: o Snake percorre o gráfico de contribuições do GitHub e o gráfico 3D mostra os commits diários dos meus projetos.</sub></p>
 
 ### Snake
 
@@ -211,7 +211,7 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-3d/profile-night-rainbow.svg" />
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-3d/profile-south-season-animate.svg" />
-  <img alt="Gráfico 3D das contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-3d/profile-south-season-animate.svg" />
+  <img alt="Gráfico 3D dos commits diários dos projetos de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-3d/profile-south-season-animate.svg" />
 </picture>
 
 ## 🎮 Arcade de contribuições
@@ -228,7 +228,7 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
 
 <details>
   <summary><b>👾 Commit Invaders</b></summary>
-  <br />
+  <p><sub>A pontuação do jogo soma as contribuições do gráfico do GitHub no último ano.</sub></p>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-invaders/commit-invaders-dark.svg" />
     <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-invaders/commit-invaders.svg" />
@@ -312,17 +312,17 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
 
 <details>
   <summary><b>🌆 GitWorld</b></summary>
-  <br />
+  <p><sub>O total e a sequência mostrados na cidade vêm do gráfico de contribuições do GitHub.</sub></p>
   <img alt="Cidade animada construída a partir das contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-gitworld/gitworld.svg" />
 </details>
 
 <details>
   <summary><b>🏡 Vila Maeul in the Sky</b></summary>
-  <br />
+  <p><sub>Construída com os commits diários dos meus projetos.</sub></p>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-maeul/maeul-in-the-sky-dark.svg" />
     <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-maeul/maeul-in-the-sky-light.svg" />
-    <img alt="Vila isométrica construída a partir das contribuições de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-maeul/maeul-in-the-sky-dark.svg" />
+    <img alt="Vila isométrica construída a partir dos commits diários dos projetos de Helio965" src="https://raw.githubusercontent.com/Helio965/Helio965/output-maeul/maeul-in-the-sky-dark.svg" />
   </picture>
 </details>
 

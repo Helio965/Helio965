@@ -1,8 +1,13 @@
 name: generate 3d contributions
 
 on:
+  # Runs right after any run of the stats workflow, which is what publishes
+  # activity.json (manual runs from other branches publish it too).
+  workflow_run:
+    workflows: ["generate profile stats"]
+    types: [completed]
   schedule:
-    - cron: "27 3 * * *"
+    - cron: "57 3 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -16,12 +21,52 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      # Writes the SVGs to ./profile-3d-contrib, so no checkout is needed.
+      - name: checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: set up node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      # The same activity file the stats cards were rendered from (git instead
+      # of raw.githubusercontent.com, which may serve a copy a few minutes old).
+      - name: fetch the published project activity
+        env:
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          git clone --quiet --depth 1 --branch output-stats "$REPO_URL" stats
+          test -s stats/activity.json
+
+      # Local stand-in for the GitHub GraphQL endpoint (documented
+      # GITHUB_ENDPOINT option): queries go to GitHub and the contribution
+      # calendar of the answer is replaced by the project activity.
+      - name: start the activity calendar endpoint
+        run: |
+          nohup node scripts/contribution-calendar-endpoint.js stats/activity.json 8787 > endpoint.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -s -o /dev/null http://127.0.0.1:8787/; then exit 0; fi
+            sleep 0.5
+          done
+          cat endpoint.log
+          exit 1
+
+      # Writes the SVGs to ./profile-3d-contrib. settings.json declares the same
+      # ten files and themes as the action's defaults, labelled "commits".
       - name: generate 3d svgs
         uses: yoshi389111/github-profile-3d-contrib@v0.9.3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USERNAME: ${{ github.repository_owner }}
+          GITHUB_ENDPOINT: http://127.0.0.1:8787/graphql
+          SETTING_JSON: .github/profile-3d/settings.json
+
+      - name: check the generated svgs
+        run: |
+          cat endpoint.log
+          node scripts/check-3d-images.js profile-3d-contrib stats/activity.json
 
       - name: push 3d svgs to the output-3d branch
         uses: crazy-max/ghaction-github-pages@v5
