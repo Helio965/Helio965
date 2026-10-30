@@ -83,9 +83,11 @@ export function createLedger({ now = new Date(), timeZone = TIME_ZONE } = {}) {
   // (new SHA, same author, author date and subject).
   const shas = new Set();
   const signatures = new Set();
+  // Day and language of every counted commit, so one can be taken back out.
+  const countedCommits = new Map();
   // Same counts split by the primary language of each repository (no names).
   const languages = new Map();
-  const excluded = { merge_commits: 0, automation_commits: 0, duplicate_copies: 0, future_dated: 0 };
+  const excluded = { merge_commits: 0, squash_merges: 0, automation_commits: 0, duplicate_copies: 0, future_dated: 0 };
   const limit = now.getTime() + FUTURE_TOLERANCE_MS;
   const currentDay = localDay(now, timeZone);
   let counted = 0;
@@ -106,7 +108,24 @@ export function createLedger({ now = new Date(), timeZone = TIME_ZONE } = {}) {
       let repoCounted = 0;
       return {
         has: sha => shas.has(sha),
+        isCounted: sha => countedCommits.has(sha),
         get counted() { return repoCounted; },
+        // Takes back a squash merge whose original commits are counted too.
+        discountSquash(sha) {
+          const entry = countedCommits.get(sha);
+          if (!entry) return false;
+          countedCommits.delete(sha);
+          const decrement = (map, key) => (map.get(key) > 1 ? map.set(key, map.get(key) - 1) : map.delete(key));
+          decrement(days, entry.day);
+          if (entry.language) {
+            decrement(languages.get(entry.language), entry.day);
+            if (languages.get(entry.language).size === 0) languages.delete(entry.language);
+          }
+          counted--;
+          repoCounted--;
+          excluded.squash_merges++;
+          return true;
+        },
         add(commit) {
           if (shas.has(commit.sha)) return 'seen';
           shas.add(commit.sha);
@@ -136,6 +155,7 @@ export function createLedger({ now = new Date(), timeZone = TIME_ZONE } = {}) {
             const perDay = languages.get(language);
             perDay.set(day, (perDay.get(day) || 0) + 1);
           }
+          countedCommits.set(commit.sha, { day, language });
           counted++;
           repoCounted++;
           return 'counted';

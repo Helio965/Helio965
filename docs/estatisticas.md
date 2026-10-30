@@ -18,7 +18,7 @@ publicado na branch `output-stats`. Ele contém:
 | `languages` | Commits por dia, agrupados pela linguagem principal do repositório |
 | `repositories` | Repositórios analisados (públicos, privados, arquivados, vazios, forks ignorados) |
 | `coverage.private` | `not_configured` sem `PROFILE_STATS_TOKEN`; `token` com ele (todos os privados que o token lê); `complete` quando o GitHub informa quantos privados a conta tem e todos foram lidos |
-| `excluded` | Merges, commits de automação, cópias de rebase e branches de imagens ignorados |
+| `excluded` | Merges, squash merges repetidos, commits de automação, cópias de rebase e branches de imagens ignorados |
 | `generated_at`, `today` | Momento da coleta e o dia correspondente em Brasília |
 
 Regras de contagem (`scripts/lib/activity.js`):
@@ -26,6 +26,7 @@ Regras de contagem (`scripts/lib/activity.js`):
 - Entram commits de qualquer autor: a conta Helio965, Claude, Codex, colaboradores e outras ferramentas. A autoria registrada no Git não é alterada.
 - Todas as branches são lidas, não só a `main`. Cada SHA conta uma vez, mesmo que apareça em várias branches ou repositórios.
 - Commits de merge não contam, porque repetem trabalho já contado. Cópias de rebase ou cherry-pick (mesmo autor, data de autoria e título) contam uma vez, em qualquer repositório, para que o resultado não dependa da ordem de leitura.
+- Um squash merge (título terminado em `(#N)`) fica de fora quando o GitHub confirma que ele é o commit de merge do pull request N e os commits originais desse pull request já foram contados, porque a branch ainda existe. Se a branch foi apagada, o squash conta: é o único registro do trabalho.
 - Ficam de fora os forks, as branches `output*` deste repositório (imagens geradas) e os commits do `github-actions[bot]`.
 - O dia de cada commit é a data de autoria (quando o trabalho foi feito) no fuso `America/Sao_Paulo`. Commits com data no futuro usam a data do commit ou são descartados.
 - A sequência atual continua viva enquanto ontem teve commits, mesmo que hoje ainda não tenha. Em caso de empate, a maior sequência é a mais antiga, como no Streak Stats.
@@ -69,7 +70,7 @@ Para incluir os privados:
 1. Em <https://github.com/settings/personal-access-tokens/new>, crie um **fine-grained token**:
    - Resource owner: `Helio965`;
    - Repository access: **All repositories**, que inclui também os repositórios criados depois (com “Only select repositories”, um repositório novo ou esquecido ficaria de fora sem nenhum erro);
-   - Permissions › Repository: **Contents: Read-only** (o GitHub adiciona **Metadata: Read-only** automaticamente);
+   - Permissions › Repository: **Contents: Read-only** (o GitHub adiciona **Metadata: Read-only** automaticamente). Opcionalmente, **Pull requests: Read-only**, para que squash merges de repositórios privados também sejam reconhecidos; sem essa permissão eles continuam contando;
    - escolha uma validade e anote quando renovar.
 2. Em <https://github.com/Helio965/Helio965/settings/secrets/actions>, crie o secret **`PROFILE_STATS_TOKEN`** com o token.
 3. Rode o workflow `generate profile stats` manualmente (aba Actions › Run workflow).

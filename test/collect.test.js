@@ -43,6 +43,12 @@ function fakeGitHub({ login = 'Helio965', repos, ownedPrivate, hidden = [] }) {
     async request(path) {
       calls.push(path);
       if (path === '/user') return { data: { login, ...(ownedPrivate === undefined ? {} : { owned_private_repos: ownedPrivate }) } };
+      const pull = path.match(/^\/repos\/Helio965\/([^/]+)\/pulls\/(\d+)$/);
+      if (pull) {
+        const entry = byName.get(pull[1])?.pulls?.[pull[2]];
+        if (!entry || entry.forbidden) return { status: entry ? 403 : 404, data: null };
+        return { status: 200, data: { number: Number(pull[2]), merge_commit_sha: sha(entry.mergeCommit) } };
+      }
       throw new Error('unexpected ' + path);
     },
     async paginate(path, params = {}) {
@@ -50,6 +56,11 @@ function fakeGitHub({ login = 'Helio965', repos, ownedPrivate, hidden = [] }) {
       if (path === '/users/Helio965/repos') return { items: repos.filter(repo => !repo.private).map(meta) };
       // A fine-grained token only lists the repositories it was granted.
       if (path === '/user/repos') return { items: repos.filter(repo => !hidden.includes(repo.name)).map(meta) };
+      const pullCommits = path.match(/^\/repos\/Helio965\/([^/]+)\/pulls\/(\d+)\/commits$/);
+      if (pullCommits) {
+        const entry = byName.get(pullCommits[1])?.pulls?.[pullCommits[2]];
+        return { items: entry && !entry.forbidden ? entry.commits.map(id => ({ sha: sha(id) })) : [] };
+      }
       const match = path.match(/^\/repos\/Helio965\/([^/]+)\/(branches|commits)$/);
       const repo = match && byName.get(decodeURIComponent(match[1]));
       if (!repo) throw new Error('GitHub API 404 at /repos/:owner/:repo');
@@ -157,4 +168,38 @@ test('private coverage is complete only when every private repository was read',
   const partial = fakeGitHub({ repos, ownedPrivate: 2, hidden: ['Hidden-Project'] });
   await assert.rejects(collectActivity({ client: partial.client, owner: 'Helio965', includePrivate: true, now: NOW }), error =>
     /reads 1 of the 2 private repositories/.test(error.message) && !error.message.includes('Hidden-Project'));
+});
+
+test('a squash merge is left out only while the commits it repeats are counted', async () => {
+  const repo = (branches, pulls) => [{
+    id: 1, name: 'Helio965',
+    commits: {
+      a1: { parents: [], date: day('2026-10-28') },
+      p1: { parents: ['a1'], date: day('2026-10-29'), author: 'Claude', login: null, message: 'feat: cards' },
+      p2: { parents: ['p1'], date: day('2026-10-29'), author: 'Claude', login: null, message: 'fix: review' },
+      s1: { parents: ['a1'], date: day('2026-10-30'), message: 'fix(profile): restore the cards (#2)' }
+    },
+    branches,
+    pulls
+  }];
+  const pulls = { 2: { mergeCommit: 's1', commits: ['p1', 'p2'] } };
+
+  const kept = fakeGitHub({ repos: repo({ main: 's1', 'claude/cards': 'p2' }, pulls) });
+  const withBranch = await collectActivity({ client: kept.client, owner: 'Helio965', includePrivate: false, now: NOW });
+  assert.equal(withBranch.commits.total, 3, 'a1, p1 and p2; the squash repeats p1 and p2');
+  assert.equal(withBranch.excluded.squash_merges, 1);
+  assert.deepEqual(withBranch.daily, { '2026-10-28': 1, '2026-10-29': 2 });
+
+  const deleted = fakeGitHub({ repos: repo({ main: 's1' }, pulls) });
+  const withoutBranch = await collectActivity({ client: deleted.client, owner: 'Helio965', includePrivate: false, now: NOW });
+  assert.equal(withoutBranch.commits.total, 2, 'with the branch gone, the squash is the only record of the work');
+  assert.equal(withoutBranch.excluded.squash_merges, 0);
+
+  const forbidden = fakeGitHub({ repos: repo({ main: 's1', 'claude/cards': 'p2' }, { 2: { ...pulls[2], forbidden: true } }) });
+  const unreadable = await collectActivity({ client: forbidden.client, owner: 'Helio965', includePrivate: false, now: NOW });
+  assert.equal(unreadable.commits.total, 4, 'without access to pull requests nothing is left out');
+
+  const other = fakeGitHub({ repos: repo({ main: 's1', 'claude/cards': 'p2' }, { 2: { ...pulls[2], mergeCommit: 'a1' } }) });
+  const notTheMerge = await collectActivity({ client: other.client, owner: 'Helio965', includePrivate: false, now: NOW });
+  assert.equal(notTheMerge.commits.total, 4, 'a subject ending in (#2) that is not the merge commit of #2 counts');
 });

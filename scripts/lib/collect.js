@@ -64,6 +64,7 @@ async function collectRepository({ client, owner, repo, ledger, totals }) {
     (b.name === repo.default_branch) - (a.name === repo.default_branch) || a.name.localeCompare(b.name));
 
   const scope = ledger.repository({ language: repo.language || null });
+  const squashCandidates = [];
   for (const branch of branches) {
     const head = branch.commit?.sha;
     if (typeof head !== 'string' || !SHA_PATTERN.test(head)) {
@@ -76,10 +77,34 @@ async function collectRepository({ client, owner, repo, ledger, totals }) {
     // Listing by head SHA keeps the snapshot consistent if the branch moves meanwhile.
     const history = await client.paginate(base + '/commits', { sha: head }, { allow: [409] });
     totals.branches.scanned++;
-    for (const item of history.items) scope.add(normalizeCommit(item));
+    for (const item of history.items) {
+      const commit = normalizeCommit(item);
+      const pull = commit.subject.match(SQUASH_SUBJECT);
+      if (scope.add(commit) === 'counted' && commit.parentCount === 1 && pull) {
+        squashCandidates.push({ sha: commit.sha, number: Number(pull[1]) });
+      }
+    }
     if (!scope.has(head)) throw new Error('Branch history did not include its head commit; refusing a partial count');
   }
+  for (const candidate of squashCandidates) {
+    if (await isSquashOfCountedWork({ client, base, scope, ...candidate })) scope.discountSquash(candidate.sha);
+  }
   if (scope.counted > 0) totals.repositories.with_commits++;
+}
+
+// "Title (#12)" is how GitHub names a squash merge of pull request 12.
+const SQUASH_SUBJECT = /\(#(\d+)\)$/;
+
+// A squash merge repeats the work of its pull request. It is left out only
+// when GitHub confirms it is that pull request's merge commit and at least
+// one original commit of the pull request is counted (its branch still
+// exists); otherwise it is the only record of the work and keeps counting.
+// Without permission to read pull requests the commit keeps counting.
+async function isSquashOfCountedWork({ client, base, scope, sha, number }) {
+  const pull = await client.request(base + '/pulls/' + number, {}, { allow: [403, 404] });
+  if (pull.data?.merge_commit_sha !== sha) return false;
+  const commits = await client.paginate(base + '/pulls/' + number + '/commits', {}, { allow: [403, 404] });
+  return commits.items.some(item => item?.sha !== sha && scope.isCounted(item?.sha));
 }
 
 export async function collectActivity({
