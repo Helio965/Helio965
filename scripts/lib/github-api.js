@@ -125,8 +125,7 @@ export function createGitHubClient({
           throw new GitHubApiError('Invalid JSON from ' + endpoint, { status: response.status, kind: 'malformed' });
         }
       }
-      if (allow.includes(response.status)) return { status: response.status, data: null, headers: response.headers };
-
+      // Rate limits come first, so an allowed 403 never hides one.
       const delay = rateLimitDelay(response, text);
       if (delay !== null) {
         if (delay > maxRateLimitWaitMs || attempt >= maxAttempts) {
@@ -135,6 +134,7 @@ export function createGitHubClient({
         await sleep(delay);
         continue;
       }
+      if (allow.includes(response.status)) return { status: response.status, data: null, headers: response.headers };
       if (response.status >= 500 && attempt < maxAttempts) {
         await sleep(1000 * 2 ** (attempt - 1));
         continue;

@@ -141,3 +141,21 @@ test('malformed API items are refused instead of being guessed', () => {
   assert.throws(() => normalizeCommit({ sha: 'a'.repeat(40), commit: { author: {} }, parents: [] }), /Malformed/);
   assert.throws(() => normalizeCommit({ sha: 'a'.repeat(40), commit: { author: { date: '2026-10-01T00:00:00Z' } } }), /Malformed/);
 });
+
+test('a squash merge taken back leaves totals, days and languages consistent', () => {
+  const ledger = createLedger({ now: NOW });
+  const scope = ledger.repository({ language: 'Python' });
+  const squash = item({ date: '2026-10-30T12:00:00Z', message: 'feat: cards (#2)' });
+  const other = item({ date: '2026-10-30T13:00:00Z' });
+  scope.add(normalizeCommit(squash));
+  scope.add(normalizeCommit(other));
+  assert.equal(scope.discountSquash(squash.sha), true);
+  assert.equal(scope.discountSquash(squash.sha), false, 'only once');
+  assert.equal(scope.discountSquash('f'.repeat(40)), false, 'never counted');
+  const summary = ledger.summary();
+  assert.equal(summary.total, 1);
+  assert.equal(scope.counted, 1);
+  assert.deepEqual(summary.daily, { '2026-10-30': 1 });
+  assert.deepEqual(summary.languages, [{ name: 'Python', daily: { '2026-10-30': 1 } }]);
+  assert.equal(summary.excluded.squash_merges, 1);
+});
