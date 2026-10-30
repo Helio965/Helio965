@@ -1,191 +1,102 @@
-'use strict';
-
-// Counts repository activity, NOT GitHub's official personal contributions.
-// Includes distinct commits by every author, including Claude and Codex.
-// Excludes generated profile branches, avoids duplicate SHAs across branches.
-// Never publishes names or contents of private repositories.
-const fs = require('node:fs');
-const path = require('node:path');
+// Collects the project activity of the profile owner and writes
+// dist/activity.json, the data every custom profile card is rendered from.
+// PROFILE_STATS_TOKEN (read-only token of the owner) adds private repositories;
+// without it only public repositories are read and the coverage says so.
+// Refuses to write anything it cannot vouch for: on any API failure, or when
+// the total drops sharply while coverage did not change, the previously
+// published file stays in place and the step fails.
+import fs from 'node:fs';
+import path from 'node:path';
+import { collectActivity } from './lib/collect.js';
+import { createGitHubClient } from './lib/github-api.js';
+import { languageColor } from './lib/language-colors.js';
 
 const owner = process.env.GITHUB_REPOSITORY_OWNER || 'Helio965';
-const token = process.env.ACTIVITY_READ_TOKEN || process.env.GITHUB_TOKEN;
-const privateTokenEnabled = process.env.HAS_PRIVATE_TOKEN === 'true';
-if (!token) throw new Error('GitHub API token is missing');
+const privateToken = process.env.PROFILE_STATS_TOKEN || '';
+const output = process.env.ACTIVITY_OUTPUT || 'dist/activity.json';
+const previousPath = process.env.PREVIOUS_ACTIVITY || '';
+const allowDecrease = process.env.ALLOW_DECREASE === 'true';
+// A drop larger than this (with unchanged coverage) usually means partial data.
+const MAX_DROP = 0.1;
 
-const headers = {
-  'Accept': 'application/vnd.github+json',
-  'Authorization': 'Bearer ' + token,
-  'User-Agent': 'Helio965-profile-activity',
-  'X-GitHub-Api-Version': '2022-11-28'
-};
-let requests = 0;
-
-async function api(endpoint, params = {}) {
-  requests += 1;
-  if (requests > 4000) {
-    throw new Error('Stopped at the 4000-request safety limit; refusing to publish incomplete data.');
-  }
-  const url = new URL('https://api.github.com' + endpoint);
-  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, String(value));
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const response = await fetch(url, { headers, signal: AbortSignal.timeout(30000) });
-    if (response.ok) return response.json();
-    const body = (await response.text()).slice(0, 300);
-    if (response.status === 409) return [];
-    if ((response.status >= 500 || response.status === 429) && attempt < 2) {
-      await new Promise(resolve => setTimeout(resolve, (attempt + 1) * 1500));
-      continue;
-    }
-    throw new Error('GitHub API ' + response.status + ' at ' + url.pathname + ': ' + body);
+function readPrevious(file) {
+  if (!file || !fs.existsSync(file)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return null;
   }
 }
 
-async function allPages(endpoint, params = {}) {
-  const items = [];
-  for (let page = 1; page <= 100; page++) {
-    const batch = await api(endpoint, { ...params, per_page: 100, page });
-    if (!Array.isArray(batch)) throw new Error('Unexpected paginated API response: ' + endpoint);
-    items.push(...batch);
-    if (batch.length < 100) return items;
+export function checkConsistency(activity, previous, { allowDrop = false } = {}) {
+  const problems = [];
+  const dailySum = Object.values(activity.daily).reduce((sum, value) => sum + value, 0);
+  if (dailySum !== activity.commits.total) problems.push('daily counts do not add up to the total');
+  if (activity.repositories.analyzed === 0 || activity.commits.total === 0) problems.push('no repositories or commits were found');
+  const { current, longest } = activity.streaks;
+  if (current.length > longest.length || longest.length > activity.commits.active_days) problems.push('streaks are inconsistent');
+  if (previous?.commits && previous.coverage?.private === activity.coverage.private && !allowDrop &&
+      activity.commits.total < previous.commits.total * (1 - MAX_DROP)) {
+    problems.push('total commits fell from ' + previous.commits.total + ' to ' + activity.commits.total +
+      ' with the same coverage; run the workflow manually with allow_decrease if this is expected');
   }
-  throw new Error('More than 10,000 entries at ' + endpoint + '. Refusing to publish a partial count.');
+  return problems;
 }
 
-const formatter = new Intl.DateTimeFormat('en-US', {
-  timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
-});
-function localDay(input) {
-  const parts = Object.fromEntries(
-    formatter.formatToParts(new Date(input)).map(part => [part.type, part.value])
-  );
-  return parts.year + '-' + parts.month + '-' + parts.day;
-}
-function shiftedDay(date, offsetDays) {
-  const utcNoon = Date.parse(date + 'T12:00:00Z');
-  return new Date(utcNoon + offsetDays * 86400000).toISOString().slice(0, 10);
-}
-function escapeXml(value) {
-  return String(value).replace(/[&<>"']/g, char =>
-    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&apos;' })[char]
-  );
-}
-
-function svgCard({ total, recent30, streak, longest, projectCount, privateCount, lastUpdated }, dark) {
-  const bg = dark ? '#0D1117' : '#FFFFFF';
-  const heading = dark ? '#58A6FF' : '#0969DA';
-  const ink = dark ? '#E6EDF3' : '#24292F';
-  const sub = dark ? '#8B949E' : '#57606A';
-  const border = dark ? '#30363D' : '#D0D7DE';
-  const fmt = n => new Intl.NumberFormat('pt-BR').format(n);
-  const visibility = privateTokenEnabled
-    ? 'Públicos + privados acessíveis (' + privateCount + ' privados)'
-    : 'Somente públicos: configure PROFILE_STATS_TOKEN para incluir privados';
-  const stat = (x, y, label, number) => [
-    '<text x="' + x + '" y="' + y + '" font-size="12" fill="' + sub + '">' + escapeXml(label) + '</text>',
-    '<text x="' + x + '" y="' + (y + 26) + '" font-size="26" font-weight="700" fill="' + ink + '">' + fmt(number) + '</text>'
-  ].join('\n');
-  return [
-    '<svg xmlns="http://www.w3.org/2000/svg" width="467" height="212" viewBox="0 0 467 212" role="img" aria-label="Atividade em repositórios de ' + escapeXml(owner) + '">',
-    '<rect x="0.5" y="0.5" width="466" height="211" rx="7" fill="' + bg + '" stroke="' + border + '"/>',
-    '<g font-family="Segoe UI,Ubuntu,Arial,sans-serif">',
-    '<text x="23" y="31" font-size="18" font-weight="700" fill="' + heading + '">Atividade nos projetos de ' + escapeXml(owner) + '</text>',
-    stat(23, 62, 'Commits em todos os projetos', total),
-    stat(249, 62, 'Últimos 30 dias', recent30),
-    stat(23, 121, 'Dias consecutivos', streak),
-    stat(249, 121, 'Maior sequência', longest),
-    '<text x="23" y="178" font-size="10.5" fill="' + sub + '">Autores humanos e IA · ' + fmt(projectCount) + ' repositórios com commits</text>',
-    '<text x="23" y="194" font-size="9.5" fill="' + sub + '">' + escapeXml(visibility) + '</text>',
-    '</g></svg>'
-  ].join('\n');
+function writeStepSummary(activity) {
+  const file = process.env.GITHUB_STEP_SUMMARY;
+  if (!file) return;
+  const { commits, streaks, repositories, coverage, excluded } = activity;
+  const lines = [
+    '### Atividade dos projetos',
+    '',
+    '| Indicador | Valor |',
+    '| --- | --- |',
+    '| Total de commits | ' + commits.total + ' |',
+    '| Commits nos últimos 30 dias | ' + commits.last_30_days + ' |',
+    '| Dias consecutivos | ' + streaks.current.length + (streaks.current.start ? ' (' + streaks.current.start + ' a ' + streaks.current.end + ')' : '') + ' |',
+    '| Maior sequência | ' + streaks.longest.length + (streaks.longest.start ? ' (' + streaks.longest.start + ' a ' + streaks.longest.end + ')' : '') + ' |',
+    '| Repositórios analisados | ' + repositories.analyzed + ' (' + repositories.public + ' públicos, ' + repositories.private + ' privados) |',
+    '| Cobertura dos privados | ' + (coverage.private === 'complete' ? 'completa' : 'não configurada (PROFILE_STATS_TOKEN ausente)') + ' |',
+    '| Merges não contados | ' + excluded.merge_commits + ' |',
+    ''
+  ];
+  fs.appendFileSync(file, lines.join('\n') + '\n');
 }
 
 async function main() {
-  const publicRepos = await allPages('/users/' + encodeURIComponent(owner) + '/repos', { type: 'owner' });
-  const accessible = new Map();
-  for (const repo of publicRepos) {
-    if (repo.owner.login.toLowerCase() === owner.toLowerCase() && !repo.fork) {
-      accessible.set(repo.full_name, repo);
-    }
-  }
-  if (privateTokenEnabled) {
-    const identity = await api('/user');
-    if (identity.login.toLowerCase() !== owner.toLowerCase()) {
-      throw new Error('PROFILE_STATS_TOKEN must belong to ' + owner);
-    }
-    const owned = await allPages('/user/repos', { affiliation: 'owner', visibility: 'all' });
-    for (const repo of owned) {
-      if (repo.owner.login.toLowerCase() === owner.toLowerCase() && !repo.fork) {
-        accessible.set(repo.full_name, repo);
-      }
-    }
-  }
+  const token = privateToken || process.env.GITHUB_TOKEN;
+  const client = createGitHubClient({ token });
+  const activity = await collectActivity({ client, owner, includePrivate: Boolean(privateToken) });
+  activity.languages = activity.languages.map(({ name, daily }) => ({ name, color: languageColor(name), daily }));
 
-  const days = new Map();
-  let total = 0;
-  let projectsWithCommits = 0;
-  const privateCount = Array.from(accessible.values()).filter(repo => repo.private).length;
+  const problems = checkConsistency(activity, readPrevious(previousPath), { allowDrop: allowDecrease });
+  if (problems.length) throw new Error('Refusing to publish activity data: ' + problems.join('; '));
 
-  for (const repo of accessible.values()) {
-    const repoPath = '/repos/' + encodeURIComponent(owner) + '/' + encodeURIComponent(repo.name);
-    const branches = await allPages(repoPath + '/branches');
-    const seen = new Set();
-    for (const branch of branches) {
-      // The profile repository publishes graphics to several output-* branches daily.
-      // Those automated image deployments are not software development activity.
-      if (repo.name.toLowerCase() === owner.toLowerCase() && /^output(?:-|$)/.test(branch.name)) {
-        continue;
-      }
-      const commits = await allPages(repoPath + '/commits', { sha: branch.name });
-      for (const commit of commits) {
-        if (seen.has(commit.sha)) continue;
-        seen.add(commit.sha);
-        const timestamp = commit.commit?.author?.date || commit.commit?.committer?.date;
-        if (!timestamp) continue;
-        const date = localDay(timestamp);
-        days.set(date, (days.get(date) || 0) + 1);
-        total++;
-      }
-    }
-    if (seen.size) projectsWithCommits++;
+  fs.mkdirSync(path.dirname(output), { recursive: true });
+  fs.writeFileSync(output, JSON.stringify(activity, null, 2) + '\n', 'utf8');
+  writeStepSummary(activity);
+  if (activity.coverage.private !== 'complete') {
+    console.log('::warning title=Repositórios privados fora da contagem::Configure o secret PROFILE_STATS_TOKEN ' +
+      '(token fine-grained de ' + owner + ' com Contents: read) para incluir os repositórios privados.');
   }
-
-  const now = new Date();
-  const today = localDay(now);
-  const cutoff = shiftedDay(today, -29);
-  const recent30 = Array.from(days.entries())
-    .filter(([date]) => date >= cutoff && date <= today)
-    .reduce((sum, [, amount]) => sum + amount, 0);
-
-  let currentDay = days.has(today) ? today : shiftedDay(today, -1);
-  let streak = 0;
-  while (days.has(currentDay)) {
-    streak++;
-    currentDay = shiftedDay(currentDay, -1);
-  }
-
-  const sortedDays = Array.from(days.keys()).sort();
-  let longest = 0;
-  let running = 0;
-  let last = null;
-  for (const day of sortedDays) {
-    running = last && shiftedDay(last, 1) === day ? running + 1 : 1;
-    longest = Math.max(longest, running);
-    last = day;
-  }
-  const stats = { total, recent30, streak, longest, projectCount: projectsWithCommits, privateCount, lastUpdated: today };
-  fs.mkdirSync(path.join(process.cwd(), 'dist'), { recursive: true });
-  fs.writeFileSync('dist/all-activity.svg', svgCard(stats, false), 'utf8');
-  fs.writeFileSync('dist/all-activity-dark.svg', svgCard(stats, true), 'utf8');
-  // Aggregate figures only: do not print private repository names to the public workflow log.
+  // Aggregate figures only: private repository names never reach the public log.
   console.log(JSON.stringify({
-    total_commits: total, last_30_days: recent30, current_streak: streak,
-    longest_streak: longest, repositories: projectsWithCommits,
-    private_repositories_accessible: privateCount, private_token_configured: privateTokenEnabled,
-    api_requests: requests
+    total_commits: activity.commits.total,
+    last_30_days: activity.commits.last_30_days,
+    current_streak: activity.streaks.current,
+    longest_streak: activity.streaks.longest,
+    repositories: activity.repositories,
+    coverage: activity.coverage,
+    excluded: activity.excluded,
+    branches: activity.branches,
+    api: activity.api
   }));
 }
 
-main().catch(error => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+if (import.meta.url === 'file://' + path.resolve(process.argv[1] || '')) {
+  main().catch(error => {
+    console.log('::error title=Coleta de atividade::' + error.message);
+    process.exitCode = 1;
+  });
+}

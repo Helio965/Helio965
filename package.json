@@ -1,0 +1,17 @@
+{
+  "name": "helio965-profile",
+  "private": true,
+  "type": "module",
+  "description": "Gera os dados de atividade e os cartões de estatísticas do perfil Helio965",
+  "scripts": {
+    "test": "node --test",
+    "activity": "node scripts/repository-activity.js",
+    "cards": "node scripts/render-profile-cards.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@stats-organization/github-readme-stats-core": "2.2.0"
+  }
+}
