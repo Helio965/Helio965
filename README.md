@@ -154,13 +154,15 @@ Sou militar da Força Aérea Brasileira e estudante de Análise e Desenvolviment
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/stats-dark.svg" />
-    <img height="165" src="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/stats.svg" alt="Estatísticas do GitHub de Helio965: commits, pull requests, issues e estrelas" />
+    <img height="165" src="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/stats.svg" alt="Estatísticas oficiais do GitHub de Helio965: pull requests, issues e estrelas" />
   </picture>
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://streak-stats.demolab.com?user=Helio965&locale=pt_BR&hide_border=true&theme=github-dark-blue" />
-    <img height="165" src="https://streak-stats.demolab.com?user=Helio965&locale=pt_BR&hide_border=true" alt="Sequência de contribuições de Helio965" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/all-activity-dark.svg" />
+    <img height="190" src="https://raw.githubusercontent.com/Helio965/Helio965/output-stats/all-activity.svg" alt="Quantidade de commits em todos os repositórios acessíveis e dias consecutivos de atividade, incluindo commits de IA" />
   </picture>
 </div>
+
+<p align="center"><sub>O cartão de atividade soma commits únicos feitos por qualquer autor, inclusive por Claude e Codex, nos repositórios próprios acessíveis e em suas branches (sem contar os branches de imagens automáticas do perfil). Trata-se da atividade dos projetos de Helio965, e não de créditos pessoais ou do gráfico oficial de contribuições do GitHub. Repositórios privados entram na soma quando o secret <code>PROFILE_STATS_TOKEN</code> permite sua leitura. Atualização diária por GitHub Actions.</sub></p>
 
 ## 💻 Linguagens mais utilizadas
 
